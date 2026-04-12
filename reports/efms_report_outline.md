@@ -33,7 +33,7 @@
 
 **CHƯƠNG 2. PHÂN TÍCH ĐẶC TẢ CHỨC NĂNG CỦA HỆ THỐNG EFMS**
 2.1. Kiến trúc tổng thể hệ thống
-*   2.1.1. Sơ đồ System Context (Khách hàng, Gateway, Identity, Core, Camunda, MCP Server)
+*   2.1.1. Sơ đồ System Context (Client, Gateway, Identity, Core, Camunda, MCP Server)
 *   2.1.2. Giao tiếp giữa các Dịch vụ (Service-to-Service Communication)
 2.2. Yêu cầu hệ thống
 *   2.2.1. Yêu cầu chức năng

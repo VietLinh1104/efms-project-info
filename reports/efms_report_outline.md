@@ -41,7 +41,6 @@
 2.3. Usecase Hệ thống
 *   2.3.1. Tác nhân hệ thống (Accountant, Finance Manager, Admin, AI Assistant Agent)
 *   2.3.2. Biểu đồ Usecase tổng quát
-*   2.3.3. Biểu đồ Usecase phân rã theo nhóm Dịch vụ (Identity, Core & AI Assistant)
 2.4. Đặc tả chức năng phân hệ Identity (Identity Service)
 *   2.4.1. UC#01: Xác thực người dùng (Đăng nhập, Đăng xuất)
 *   2.4.2. UC#02: Phân quyền vai trò hệ thống (RBAC)

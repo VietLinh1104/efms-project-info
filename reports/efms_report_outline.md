@@ -65,9 +65,8 @@
 *   3.1.3. Biểu đồ tuần tự luồng tương tác giữa Core Service và Camunda SaaS
 *   3.1.4. Biểu đồ tuần tự Job Worker tự động sinh bút toán kép (Dr/Cr)
 3.2. Thiết kế tích hợp Model Context Protocol (MCP Server)
-*   3.2.1. Tầng Giao tiếp Transport (Local Sidecar / Spring Boot Native SSE)
-*   3.2.2. Thiết kế Custom Resources Scheme (efms-core://database/schema-v4, efms-core://invoices/...)
-*   3.2.3. Ràng buộc bảo mật Context & Định dạng đa nhóm (Multi-Company Authentication cho AI)
+*   3.2.1. Tầng Giao tiếp Transport (Đa giao thức đồng thời: Stdio & HTTP SSE)
+*   3.2.2. Ràng buộc bảo mật Context & Định dạng đa nhóm (Multi-Company Authentication cho AI)
 3.3. Thiết kế Cơ sở dữ liệu
 *   3.3.1. Ràng buộc thiết kế theo Multi-tenancy (Company_ID isolation)
 *   3.3.2. Cấu trúc bảng phân hệ Identity (Users, Roles, Company...)

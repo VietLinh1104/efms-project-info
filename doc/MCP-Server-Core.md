@@ -6,10 +6,12 @@ Tài liệu này mô tả thiết kế và đặc tả kỹ thuật để xây d
 
 ## 1. Kiến trúc & Tầng Giao tiếp (Transport Layer)
 
-Có thể triển khai MCP Server cho Core Service thông qua hai hướng chính tùy thuộc vào môi trường sử dụng:
+MCP Server được thiết kế như một service vệ tinh độc lập (đảm nhiệm vai trò cầu nối logic AI), hỗ trợ đồng thời hai giao thức chia sẻ Transport Layer:
 
-1. **Local Sidecar (Stdio Transport)**: Xây dựng một mini server (bằng TypeScript hoặc Python) chạy dạng process độc lập trên máy local của developer. Server này giao tiếp với AI Client qua `stdio` và kết nối trực tiếp với PostgreSQL/API cục bộ của Core.
-2. **Spring Boot Native (SSE Transport)**: Tích hợp thư viện Java MCP (như Spring AI MCP) trực tiếp vào `efms-core-service`. Expose endpoint dạng Server-Sent Events (ví dụ `/mcp/messages`) để các AI Agent giao tiếp phân tán trong môi trường Cloud/Staging. Dùng chung Security/JWT của ứng dụng hiện tại.
+1. **Stdio Transport**: Phục vụ cho môi trường phát triển local (như kết nối từ Cursor, Claude Desktop do user khởi chạy). Agent sẽ chạy process MCP Server trực tiếp và truyền luồng JSON-RPC thông qua chuẩn I/O (stdin/stdout).
+2. **SSE Transport (Server-Sent Events)**: Phục vụ cho môi trường tích hợp Cloud Web (trợ lý ảo nội bộ hệ thống). MCP Server cung cấp endpoint giao thức HTTP Server-Sent Events (`/mcp/sse`) để nhận truyền nhận tương tác từ AI Agent qua mạng.
+
+Trong cả hai phương thức giao tiếp trên, MCP Server đều đóng vai trò xử lý ngôn ngữ giao thức của MCP, sau đó chuyển phát các hàm nội bộ (function calls) thành lời gọi API REST/gRPC đến Backend `efms-core-service` hoặc chọc truy vấn đến Database.
 
 ---
 

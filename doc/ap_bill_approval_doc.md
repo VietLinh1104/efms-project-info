@@ -64,6 +64,8 @@ Quy trình bắt đầu khi một Accountant tạo một AP Bill mới và xác 
 ---
 
 ## 5. Tích hợp Kỹ thuật
-*   **Zeebe Client:** Dùng để start process instance.
-*   **Tasklist API:** Dùng để fetch và complete các User Task từ giao diện EFMS.
+*   **Zeebe Client:** Dùng để start process instance và hoàn thành task (complete).
+*   **Tasklist API:** Dùng để fetch danh sách các User Task từ Camunda.
+    * Phía Backend sẽ tự động map các Task lấy được vào hoá đơn tương ứng và trả về Frontend thông qua `PagedResponse<InvoiceResponse>`.
+    * Mỗi task data sẽ luôn đính kèm `taskId` và `taskName`.
 *   **Job Workers:** Các worker chạy ngầm trong `efms-core-service` để thực hiện logic nghiệp vụ sau các bước duyệt.

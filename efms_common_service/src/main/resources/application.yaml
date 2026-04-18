@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: efms-common-service
+
+  profiles:
+    active: dev

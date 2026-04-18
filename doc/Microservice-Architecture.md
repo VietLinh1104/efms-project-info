@@ -27,9 +27,9 @@ graph TD
         Common --> DB_Common[(Common DB - PostgreSQL)]
     end
     
-    %% Service to Service Communication
-    Core -.->|Feign Client - Fetch Users/Company Info| Identity
-    Common -.->|Feign Client - Fetch Users Info| Identity
+    %% Service to Service Communication (Optimized with Batch Fetching)
+    Core -.->|Batch Fetch Users/Company Info| Identity
+    Common -.->|Batch Fetch User details to avoid N+1| Identity
 ```
 
 ### 1.1 Vai trò của từng Service
@@ -41,14 +41,17 @@ graph TD
     *   Quản lý thông tin xác thực, RBAC (Role-Based Access Control) và Cấu trúc Doanh nghiệp đa chi nhánh (Multi-tenancy).
     *   **Context Path:** `/api/identity`
     *   Cấp phát JWT Tokens tại `/auth/login`.
+    *   **Internal API:** Cung cấp endpoint `/internal/users/batch` để hỗ trợ các service khác lấy thông tin user theo lô (batch) nhằm tối ưu hiệu năng.
 *   **Core Service (`efms-core-service` | Port 8082)**
     *   Hạt nhân xử lý Tài chính - Kế toán: Hóa đơn, Thanh toán, Sổ nhật ký chung, Đối soát ngân hàng.
     *   Tích hợp **Camunda 8 SaaS** để điều hướng các luồng phê duyệt (Approval Workflow) thông qua Spring Zeebe SDK (gRPC) và REST API (Zeebe REST v2, Tasklist API v1). Chứa các `@JobWorker` bắt sự kiện từ flow rẽ nhánh.
     *   **Context Path:** `/api/core`
     *   Sử dụng chung cấu trúc Users, Company bằng UUIDs do Identity quản lý nhưng **KHÔNG** tạo Foreign Key trực tiếp trên Schema.
+    *   Sử dụng cơ chế Batch Fetching khi hiển thị danh sách để lấy thông tin người tạo/người duyệt từ Identity Service.
 *   **Common Service (`efms_common_service` | Port 8083)**
     *   Cung cấp các tính năng dùng chung (độc lập nghiệp vụ) cho toàn hệ thống: Tệp đính kèm (Attachments) và Bình luận (Comments).
     *   Sử dụng cơ chế đa hình bằng bảng trung gian `entity_links` (`reference_id` và `reference_type`) để liên kết tệp/comment cho bất kỳ đối tượng nào (ví dụ Invoice thuộc Core Service).
+    *   **Tối ưu hiệu năng:** Áp dụng **Batch Fetching** qua WebClient để làm giàu dữ liệu (enrichment) thông tin tác giả (tên, avatar) trong 1 request duy nhất sang Identity Service, tránh lỗi N+1 query trên hệ thống microservices.
     *   **Context Path:** `/api/common`
 
 ---

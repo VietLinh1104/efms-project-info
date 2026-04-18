@@ -29,11 +29,18 @@ When building endpoints to fetch/upload attachments, or append comments:
 - Always enforce multi-tenancy checking (`company_id`) to ensure users only see comments belonging to their enterprise.
 - Use `reference_id` and `reference_type` in the API path or payload so that Common Service knows what it's mapping to.
 
+### 2.1 Cross-Service Data Enrichment (Batch Fetching)
+To avoid the N+1 problem and maintain microservice independence:
+- **Do not** store user or company names directly in Common Service.
+- Use `IdentityServiceClient` to batch fetch user details (name, avatar) from the Identity Service.
+- The service layer should collect all unique IDs, call the Identity Service once, and enrich the `Response` DTOs (`authorName`, `createdByName`) before returning data to the client.
+
 ## 3. Authentication & Security
 - Must implement JWT checking for `/api/common/**` identical to how Core and Identity validate the stateless token.
-- Validate `companyId` and `userId` directly from the Spring Security Context claims.
+- Validate `companyId` and `userId` directly from the Spring Security Context claims or via `X-Company-Id` / `X-User-Id` headers when called through the Gateway.
 
 ## 4. Tech Stack & Standardization
 - **Package format**: `com.linhdv.efms_common_service.*`
 - Maintain consistency using: Java 21, Spring Boot 3.3.x, Lombok, MapStruct.
+- **Inter-service Communication**: Use `WebClient` (configured in `WebClientConfig`) for REST calls to other services.
 - Controllers must strictly wrap responses using the generic `ApiResponse<T>` object. Exception handlers must convert any DB isolation or invalid references into appropriate HTTP error codes bundled within the `ApiResponse`.

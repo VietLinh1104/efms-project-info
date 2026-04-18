@@ -40,6 +40,8 @@ The Identity service manages the organizational structure and access control (Au
 - **Audit Log Controller**:
   - `/v1/audit-logs`: Access system change history with pagination (`page`, `size`).
   - `/v1/audit-logs/record`: Fetch changes for a specific `recordId` and `tableName`.
+- **Internal Controller** (Cross-service communication):
+  - `POST /internal/users/batch`: Fetch basic info (`id`, `fullName`, `email`, `avatar`) for a list of UUIDs. Requires `X-Company-Id` header.
 
 ## Implementation Details
 

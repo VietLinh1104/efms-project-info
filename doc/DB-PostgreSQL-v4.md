@@ -327,6 +327,73 @@ CREATE TABLE audit_logs (
 
 ---
 
+# PHẦN 3: EFMS COLLABORATION SERVICE DATABASE
+
+Database này chịu trách nhiệm quản lý tài liệu đính kèm và bình luận nội bộ xuyên suốt các module (Chạy trên schema/database riêng). 
+Không sử dụng Foreign Key cứng sang các Service khác, dùng `reference_id` và `reference_type` để liên kết đa hình (Polymorphic).
+
+## Danh sách bảng (4 bảng)
+| # | Bảng | Mô tả |
+| --- | --- | --- |
+| 1 | attachments | Quản lý tệp đính kèm vật lý độc lập |
+| 2 | comments | Quản lý nội dung bình luận độc lập |
+| 3 | entity_links | Bảng trung gian dùng chung để liên kết thực thể (Invoice...) với File/Comment |
+| 4 | audit_logs | Nhật ký thay đổi Collaboration |
+
+### 1. Attachments — Tệp đính kèm (Độc lập)
+```sql
+CREATE TABLE attachments (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id   UUID NOT NULL, -- UUID từ Identity Service
+    file_name    VARCHAR(255) NOT NULL,
+    file_type    VARCHAR(100),
+    file_size    BIGINT,
+    file_url     TEXT NOT NULL,
+    created_by   UUID, -- UUID từ Identity Service
+    created_at   TIMESTAMP DEFAULT now()
+);
+```
+
+### 2. Comments — Bình luận (Độc lập)
+```sql
+CREATE TABLE comments (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id       UUID NOT NULL, -- UUID từ Identity Service
+    content          TEXT NOT NULL,
+    author_id        UUID, -- UUID từ Identity Service (người bình luận)
+    created_at       TIMESTAMP DEFAULT now()
+);
+```
+
+### 3. Entity Links — Bảng trung gian liên kết dùng chung (Polymorphic)
+```sql
+CREATE TABLE entity_links (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reference_id     UUID NOT NULL, -- vd: ID của Invoice, ID của Payment
+    reference_type   VARCHAR(50) NOT NULL, -- vd: 'invoice', 'payment'
+    item_id          UUID NOT NULL, -- ID của Comment hoặc Attachment
+    item_type        VARCHAR(50) NOT NULL, -- 'comment' hoặc 'attachment'
+    created_at       TIMESTAMP DEFAULT now(),
+    UNIQUE(reference_id, reference_type, item_id, item_type)
+);
+```
+
+### 4. Audit Logs (Collaboration) — Nhật ký hệ thống Collaboration
+```sql
+CREATE TABLE audit_logs (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    table_name  VARCHAR(100) NOT NULL,
+    record_id   UUID NOT NULL,
+    action      VARCHAR(20) NOT NULL,   -- INSERT / UPDATE / DELETE
+    changed_by  UUID, -- UUID từ Identity Service
+    changed_at  TIMESTAMP DEFAULT now(),
+    old_data    JSONB,
+    new_data    JSONB
+);
+```
+
+---
+
 # Indexes Đề xuất
 
 ```sql
@@ -349,4 +416,10 @@ CREATE INDEX idx_payments_company                 ON payments(company_id);
 CREATE INDEX idx_bank_transactions_account        ON bank_transactions(bank_account_id);
 CREATE INDEX idx_bank_transactions_reconciled     ON bank_transactions(is_reconciled);
 CREATE INDEX idx_audit_logs_core_record           ON audit_logs(table_name, record_id);
+
+-- Collaboration Service
+CREATE INDEX idx_attachments_company              ON attachments(company_id);
+CREATE INDEX idx_entity_links_ref                 ON entity_links(reference_type, reference_id);
+CREATE INDEX idx_entity_links_item                ON entity_links(item_type, item_id);
+CREATE INDEX idx_audit_logs_collab_record         ON audit_logs(table_name, record_id);
 ```

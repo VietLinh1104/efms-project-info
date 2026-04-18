@@ -8,7 +8,7 @@ description: Reference for the EFMS (Enterprise Financial Management System) Pos
 This skill provides a reference for the PostgreSQL v4 database schema used in the EFMS application.
 
 ## Schema Overview
-The database is divided into two logical sections corresponding to the two main services: Identity and Core.
+The database is divided into three logical sections corresponding to the three main services: Identity, Core, and Collaboration.
 
 ### Section 1: EFMS Identity Service
 Database responsible for organizations, users, and permissions.
@@ -35,6 +35,14 @@ Database containing accounting and financial data. Note that foreign keys to Ide
 - `bank_accounts`: Bank and cash GL accounts.
 - `bank_transactions`: Bank statement records.
 - `audit_logs` (Core): Changes to financial data.
+
+### Section 3: EFMS Collaboration Service
+Database handling document, attachments, and internal communications for any entity without hard foreign keys.
+
+- `attachments`: File attachments generic table metadata (standalone).
+- `comments`: Comments for workflows and discussions (standalone).
+- `entity_links`: Universal polymorphic many-to-many link table. Links any core entity to either 'comment' or 'attachment'.
+- `audit_logs` (Collaboration): Changes to document/collaboration data.
 
 ## Key Principles
 - **UUID Keys**: All IDs use the `gen_random_uuid()` function.

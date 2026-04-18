@@ -10,7 +10,7 @@ This skill provides an overview of the EFMS backend architecture, which consists
 1. **efms-api-gateway (Port: 8080)**: The central entry point for all client requests, responsible for dynamic routing and global security (JWT validation).
 2. **efms-identity-service (Port: 8081 - typical)**: Manages authentication, multi-tenant company structure, users, roles, and permissions (RBAC).
 3. **efms-core-service (Port: 8082 - typical)**: Handles all financial and accounting operations (Invoices, Payments, Ledgers, Bank Accounts).
-4. **efms-collaboration-service (Port: 8083 - typical)**: Manages document attachments and comments for various entities across modules using a polymorphic relationship schema.
+4. **efms-common-service (Port: 8083 - typical)**: Manages common operations like document attachments and comments for various entities across modules.
 
 ## Key Architectural Principles
 

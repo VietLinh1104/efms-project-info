@@ -36,13 +36,13 @@ Database containing accounting and financial data. Note that foreign keys to Ide
 - `bank_transactions`: Bank statement records.
 - `audit_logs` (Core): Changes to financial data.
 
-### Section 3: EFMS Collaboration Service
+### Section 3: EFMS Common Service
 Database handling document, attachments, and internal communications for any entity without hard foreign keys.
 
 - `attachments`: File attachments generic table metadata (standalone).
 - `comments`: Comments for workflows and discussions (standalone).
 - `entity_links`: Universal polymorphic many-to-many link table. Links any core entity to either 'comment' or 'attachment'.
-- `audit_logs` (Collaboration): Changes to document/collaboration data.
+- `audit_logs` (Common): Changes to document/common data.
 
 ## Key Principles
 - **UUID Keys**: All IDs use the `gen_random_uuid()` function.

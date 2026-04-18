@@ -327,7 +327,7 @@ CREATE TABLE audit_logs (
 
 ---
 
-# PHẦN 3: EFMS COLLABORATION SERVICE DATABASE
+# PHẦN 3: EFMS COMMON SERVICE DATABASE
 
 Database này chịu trách nhiệm quản lý tài liệu đính kèm và bình luận nội bộ xuyên suốt các module (Chạy trên schema/database riêng). 
 Không sử dụng Foreign Key cứng sang các Service khác, dùng `reference_id` và `reference_type` để liên kết đa hình (Polymorphic).
@@ -338,7 +338,7 @@ Không sử dụng Foreign Key cứng sang các Service khác, dùng `reference_
 | 1 | attachments | Quản lý tệp đính kèm vật lý độc lập |
 | 2 | comments | Quản lý nội dung bình luận độc lập |
 | 3 | entity_links | Bảng trung gian dùng chung để liên kết thực thể (Invoice...) với File/Comment |
-| 4 | audit_logs | Nhật ký thay đổi Collaboration |
+| 4 | audit_logs | Nhật ký thay đổi Common |
 
 ### 1. Attachments — Tệp đính kèm (Độc lập)
 ```sql
@@ -378,7 +378,7 @@ CREATE TABLE entity_links (
 );
 ```
 
-### 4. Audit Logs (Collaboration) — Nhật ký hệ thống Collaboration
+### 4. Audit Logs (Common) — Nhật ký hệ thống Common
 ```sql
 CREATE TABLE audit_logs (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -417,9 +417,9 @@ CREATE INDEX idx_bank_transactions_account        ON bank_transactions(bank_acco
 CREATE INDEX idx_bank_transactions_reconciled     ON bank_transactions(is_reconciled);
 CREATE INDEX idx_audit_logs_core_record           ON audit_logs(table_name, record_id);
 
--- Collaboration Service
+-- Common Service
 CREATE INDEX idx_attachments_company              ON attachments(company_id);
 CREATE INDEX idx_entity_links_ref                 ON entity_links(reference_type, reference_id);
 CREATE INDEX idx_entity_links_item                ON entity_links(item_type, item_id);
-CREATE INDEX idx_audit_logs_collab_record         ON audit_logs(table_name, record_id);
+CREATE INDEX idx_audit_logs_common_record         ON audit_logs(table_name, record_id);
 ```

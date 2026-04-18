@@ -13,6 +13,7 @@ graph TD
     subgraph "Microservices Layer"
         Gateway -->|/api/identity/**| Identity(EFMS Identity Service)
         Gateway -->|/api/core/**| Core(EFMS Core Service)
+        Gateway -->|/api/common/**| Common(EFMS Common Service)
     end
     
     subgraph "BPMN Engine Layer"
@@ -23,10 +24,12 @@ graph TD
     subgraph "Data Storage Layer"
         Identity --> DB_Id[(Identity DB - PostgreSQL)]
         Core --> DB_Core[(Core DB - PostgreSQL)]
+        Common --> DB_Common[(Common DB - PostgreSQL)]
     end
     
     %% Service to Service Communication
     Core -.->|Feign Client - Fetch Users/Company Info| Identity
+    Common -.->|Feign Client - Fetch Users Info| Identity
 ```
 
 ### 1.1 Vai trò của từng Service
@@ -43,6 +46,10 @@ graph TD
     *   Tích hợp **Camunda 8 SaaS** để điều hướng các luồng phê duyệt (Approval Workflow) thông qua Spring Zeebe SDK (gRPC) và REST API (Zeebe REST v2, Tasklist API v1). Chứa các `@JobWorker` bắt sự kiện từ flow rẽ nhánh.
     *   **Context Path:** `/api/core`
     *   Sử dụng chung cấu trúc Users, Company bằng UUIDs do Identity quản lý nhưng **KHÔNG** tạo Foreign Key trực tiếp trên Schema.
+*   **Common Service (`efms_common_service` | Port 8083)**
+    *   Cung cấp các tính năng dùng chung (độc lập nghiệp vụ) cho toàn hệ thống: Tệp đính kèm (Attachments) và Bình luận (Comments).
+    *   Sử dụng cơ chế đa hình bằng bảng trung gian `entity_links` (`reference_id` và `reference_type`) để liên kết tệp/comment cho bất kỳ đối tượng nào (ví dụ Invoice thuộc Core Service).
+    *   **Context Path:** `/api/common`
 
 ---
 
@@ -75,9 +82,9 @@ Mọi ngoại lệ (Exceptions) ném ra trong Controller/Service đều phải �
 
 ## 3. Cấu trúc Source Code (Layered Architecture)
 
-Mỗi Microservice (Identity & Core) đều phải tuân thủ nghiêm ngặt cấu trúc gói (Package Naming Convention) sau:
+Mỗi Microservice (Identity, Core, Common) đều phải tuân thủ nghiêm ngặt cấu trúc gói (Package Naming Convention) sau:
 
-*   `com.linhdv.[service_name]`
+*   `com.linhdv.[service_name]` (Ví dụ: `com.linhdv.efms_common_service`)
     *   `config/`: Chứa các bean configurations, SecurityFilterChain, cấu hình Cors, RestTemplate/FeignConfigs.
     *   `controller/`: Interface giao tiếp với bên ngoài. Khai báo API bằng `@RestController`, `@RequestMapping`. Dữ liệu In/Out bắt buộc sử dụng `DTO` và `ApiResponse`.
     *   `dto/`: Các Data Transfer Object để giấu chi tiết của Entity. Bao gồm packet con `request`, `response`, và `common`.

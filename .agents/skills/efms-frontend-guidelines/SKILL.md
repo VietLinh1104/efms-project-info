@@ -69,3 +69,243 @@ Adhere to the following structural conventions when adding or modifying files:
 
 - Ensure separation of concerns by placing business and page-level logic in `src/pages` and keeping UI elements in `src/components`.
 - Always verify API models before passing data from UI components to the API services to ensure type safety.
+
+---
+
+## 5. Form Page Layout Standard (Chuẩn UI/Layout cho mọi Form Page)
+
+> **Bắt buộc áp dụng**: Mọi form trang chi tiết / tạo mới trong EFMS đều **PHẢI** tuân theo cấu trúc này.  
+> File tham chiếu chuẩn: `src/pages/dashboard/invoices/invoices-details/InvoiceFormPage.tsx`
+
+---
+
+### 5.1 Cấu trúc tổng thể (Page Shell)
+
+```tsx
+<div className="space-y-6">
+  {/* 1. Page Header Bar */}
+  <div className="flex items-center gap-2">
+    <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <ArrowLeft className="w-5 h-5" />
+    </Button>
+    <h2 className="text-xl font-semibold">
+      {isEditMode ? `Tiêu đề: ${record?.name || "N/A"}` : "Tạo mới ..."}
+    </h2>
+  </div>
+
+  {/* 2. Form wrapper */}
+  <Form {...form}>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-10 gap-6">
+
+      {/* 3. Main Content – 8 columns */}
+      <div className="space-y-6 col-span-8">
+        {/* Card: Thông tin chính */}
+        {/* Card: Chi tiết / Line Items */}
+      </div>
+
+      {/* 4. Sidebar – 2 columns */}
+      <div className="action col-span-2">
+        {/* Card: Trạng thái + Actions */}
+      </div>
+
+    </form>
+  </Form>
+</div>
+```
+
+**Quy tắc:**
+- Wrapper ngoài cùng: `<div className="space-y-6">`.
+- Page title bar luôn nằm **trước** `<Form>`, gồm nút `ArrowLeft` ghost + `<h2 className="text-xl font-semibold">`.
+- `<form>` dùng `grid grid-cols-10 gap-6` để chia 8/2.
+- Cột trái `col-span-8`, cột phải `col-span-2`.
+
+---
+
+### 5.2 Card: Thông tin chính (Header Info Card)
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>Thông tin chính</CardTitle>
+    <CardDescription>Nhập các thông tin chính của ...</CardDescription>
+  </CardHeader>
+  <CardContent className="grid md:grid-cols-3 gap-4">
+    {/* Các FormField */}
+  </CardContent>
+</Card>
+```
+
+**Quy tắc:**
+- Nội dung `<CardContent>` dùng `grid md:grid-cols-3 gap-4` (hoặc `grid-cols-2` nếu ít trường hơn).
+- Mỗi field dùng `<FormField>` + `<FormItem>` + `<FormLabel>` + `<FormControl>`.
+- `Input` thuần: `<Input {...field} readOnly={isReadOnly} />`.
+- `Select`: bao bên trong `<FormControl><SelectTrigger className="w-full">`.
+- Field nào cần disabled trong read-only mode: truyền `disabled={isReadOnly}` (Select) hoặc `readOnly={isReadOnly}` (Input).
+
+---
+
+### 5.3 Card: Chi tiết / Line Items (Detail Table Card)
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>Chi tiết</CardTitle>
+    <CardDescription>Dòng chi tiết</CardDescription>
+    <CardAction>
+      {!isReadOnly && (
+        <Button type="button" onClick={() => append({ /* default row */ })}>
+          <Plus className="w-4 h-4 mr-2" /> Thêm
+        </Button>
+      )}
+    </CardAction>
+  </CardHeader>
+  <CardContent>
+    <Table className="border">
+      <TableHeader>
+        <TableRow>
+          {/* Column headers */}
+          <TableHead></TableHead> {/* actions column – no header */}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {fields.map((f, i) => (
+          <TableRow key={f.id}>
+            {/* Editable cells use: <Input className="border-0 !bg-card" /> */}
+            <TableCell>
+              {!isReadOnly && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={() => remove(i)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Hủy/Xóa
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+      <TableFooter>
+        {/* Summary rows: Subtotal, Tax, Total */}
+        <TableRow>
+          <TableCell colSpan={N}>Subtotal</TableCell>
+          <TableCell>{subtotal.toLocaleString()}</TableCell>
+          <TableCell colSpan={1}></TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell colSpan={N}>Tax</TableCell>
+          <TableCell>{taxTotal.toLocaleString()}</TableCell>
+          <TableCell colSpan={1}></TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell colSpan={N}>Total</TableCell>
+          <TableCell>{total.toLocaleString()}</TableCell>
+          <TableCell colSpan={1}></TableCell>
+        </TableRow>
+      </TableFooter>
+    </Table>
+  </CardContent>
+</Card>
+```
+
+**Quy tắc:**
+- Nút "Thêm dòng" đặt trong `<CardAction>` (góc phải CardHeader), ẩn khi `isReadOnly`.
+- `Input` trong table cell: `className="border-0 !bg-card"` để hòa với nền card.
+- Cột cuối cùng luôn là cột action (xóa dòng) – dùng `DropdownMenu` với icon `MoreHorizontal`.
+- `<TableFooter>` luôn hiển thị Subtotal / Tax / Total; cột cuối padding bằng `<TableCell colSpan={1}></TableCell>`.
+- Nếu form không có line items (không cần table), bỏ card này và đặt toàn bộ fields vào `<CardContent className="grid ...">`.
+
+---
+
+### 5.4 Card: Trạng thái & Actions (Sidebar Card)
+
+```tsx
+<Card className="mx-auto w-full">
+  <CardHeader>
+    <CardTitle>Trạng thái</CardTitle>
+    <CardDescription>Trạng thái của bản ghi</CardDescription>
+  </CardHeader>
+  <CardContent>
+    {/* Status badge with dot indicator */}
+    <div className="relative w-full">
+      <span className={`absolute left-3 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full ${getStatusColor(currentStatus)}`} />
+      <Input className="pl-8 uppercase" value={currentStatus} readOnly />
+    </div>
+    {/* Optional: secondary status (e.g., approval status) */}
+  </CardContent>
+  <CardFooter className="flex flex-col gap-4 pt-0">
+    {/* Action buttons stacked vertically */}
+    <ButtonSpin isLoading={isSubmitting} variant="secondary" className="w-full" ...>
+      {isEditMode ? "Cập nhật" : "Lưu"}
+    </ButtonSpin>
+    <ButtonSpin variant="default" ... className="w-full">Xác nhận</ButtonSpin>
+    <ButtonSpin variant="default" ... className="w-full">Duyệt</ButtonSpin>
+    <ButtonSpin variant="outline" ... className="w-full">Từ chối</ButtonSpin>
+  </CardFooter>
+</Card>
+```
+
+**Quy tắc:**
+- Sidebar Card chiếm `col-span-2` (xem phần 5.1).
+- **Status badge**: dùng `<Input readOnly className="pl-8 uppercase">` + `<span>` dot tuyệt đối bên trái; màu dot qua hàm `getStatusColor`.
+- **Màu status chuẩn**:
+  | Status | Class |
+  |---|---|
+  | `draft` | `bg-amber-300` |
+  | `confirmed` | `bg-blue-500` |
+  | `approved` | `bg-green-500` |
+  | `rejected` | `bg-red-500` |
+  | mặc định | `bg-slate-300` |
+- **Action buttons**: dùng `<ButtonSpin>` từ `@components/common/ButtonSpin.tsx`, **không** dùng `<Button>` thuần cho các nút có trạng thái loading.
+- Tất cả action buttons: `className="w-full"`, xếp dọc trong `<CardFooter className="flex flex-col gap-4 pt-0">`.
+- Điều kiện hiện button: kiểm tra `currentStatus` và phân quyền (`isFinanceOrAdmin`, ...) – **không** hiển thị tất cả cùng lúc.
+
+---
+
+### 5.5 Chuẩn Loading State & Read-Only Mode
+
+- **Loading toàn trang**: `if (isLoading) return <div className="p-8 text-center text-muted-foreground">Đang tải...</div>;`
+- **isReadOnly flag**:
+  ```ts
+  const isReadOnly = isEditMode && currentStatus.toLowerCase() !== "draft";
+  ```
+- Khi `isReadOnly = true`:
+  - `Input`: thêm `readOnly={isReadOnly}`
+  - `Select`: thêm `disabled={isReadOnly}`
+  - Ẩn nút "Thêm dòng" (CardAction) và cột action (DropdownMenu) trong table.
+
+---
+
+### 5.6 Form State Management (react-hook-form + zod)
+
+- Luôn dùng `useForm` + `zodResolver` + `useFieldArray` (nếu có line items).
+- Dùng `useWatch` để reactive tính toán (subtotal, tax, total) thay vì `watch` trực tiếp trong render.
+- Dùng `useMemo` cho các giá trị tính toán từ `useWatch`.
+- Dùng `useEffect` để `form.setValue` đồng bộ ngược các giá trị phụ thuộc (amount, taxAmount) sau khi tính toán.
+- `fetchDetail` (edit mode) dùng `useCallback` + gọi `form.reset(...)` để hydrate form.
+- Loading state riêng cho từng action: `isSubmitting`, `isConfirmLoading`, `isApproveLoading`, `isRejectLoading`.
+
+---
+
+### 5.7 Checklist khi tạo Form Page mới
+
+- [ ] Wrapper `<div className="space-y-6">`
+- [ ] Page header: nút `ArrowLeft` ghost + `<h2 className="text-xl font-semibold">`
+- [ ] `<Form>` + `<form className="grid grid-cols-10 gap-6">`
+- [ ] Cột trái `col-span-8` chứa ít nhất 1 Card thông tin chính (`grid md:grid-cols-3 gap-4`)
+- [ ] Cột phải `col-span-2` chứa Card Trạng thái + Actions
+- [ ] Status badge với dot indicator + `Input` read-only uppercase
+- [ ] Action buttons dùng `<ButtonSpin>` + `w-full` + `flex flex-col gap-4`
+- [ ] `isReadOnly` flag kiểm soát toàn bộ form inputs
+- [ ] Loading state `<div className="p-8 text-center text-muted-foreground">` cho toàn trang
+- [ ] Zod schema validation + `zodResolver`
+- [ ] Toast notification (`useToastApp`) cho mọi action success/error

@@ -2,4 +2,5 @@ efms-api-gateway/
 efms-core-service/
 efms-identity-service/
 efms-react/
-efms_common_service/
+efms-common-service/
+.DS_Store

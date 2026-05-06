@@ -12,6 +12,7 @@
 *   1.1.1. Khái niệm và mô hình Microservices
 *   1.1.2. Vai trò của API Gateway trong định tuyến và bảo mật
 *   1.1.3. Mô hình Multi-tenancy (Đa công ty/chi nhánh)
+*   1.1.4. Giao tiếp giữa các dịch vụ (Service-to-Service) và Batch Fetching
 1.2. Front-End
 *   1.2.1. React.js và Vite
 *   1.2.2. React Router
@@ -28,13 +29,17 @@
 *   1.4.2. Khả năng giao tiếp giữa LLMs và hệ thống doanh nghiệp (Resources, Tools, Prompts)
 1.5. Hệ quản trị cơ sở dữ liệu
 *   1.5.1. PostgreSQL
-1.6. Kiểm thử phần mềm
-*   1.6.1. Giới thiệu kiểm thử hộp đen và kiểm thử API
+1.6. Tiêu chuẩn thiết kế hệ thống (System Design Standards)
+*   1.6.1. Chuẩn phản hồi thống nhất (Standard Response Wrapper - ApiResponse)
+*   1.6.2. Xử lý Lịch sử thao tác (Audit Logging Pattern)
+*   1.6.3. Cấu trúc giao thức mã nguồn và quy định thư viện (Package Convention & Lombok/BigDecimal)
+1.7. Kiểm thử phần mềm
+*   1.7.1. Giới thiệu kiểm thử hộp đen và kiểm thử API
 
 **CHƯƠNG 2. PHÂN TÍCH ĐẶC TẢ CHỨC NĂNG CỦA HỆ THỐNG EFMS**
 2.1. Kiến trúc tổng thể hệ thống
-*   2.1.1. Sơ đồ System Context (Client, Gateway, Identity, Core, Camunda, MCP Server)
-*   2.1.2. Giao tiếp giữa các Dịch vụ (Service-to-Service Communication)
+*   2.1.1. Sơ đồ System Context (Client, Gateway, Identity, Core, Common Service, Camunda, MCP Server)
+*   2.1.2. Giao tiếp giữa các Dịch vụ (Service-to-Service Communication và Batch Fetching)
 2.2. Yêu cầu hệ thống
 *   2.2.1. Yêu cầu chức năng
 *   2.2.2. Yêu cầu phi chức năng (Bảo mật, cách ly dữ liệu an toàn)
@@ -68,10 +73,11 @@
 *   3.2.1. Tầng Giao tiếp Transport (Đa giao thức đồng thời: Stdio & HTTP SSE)
 *   3.2.2. Ràng buộc bảo mật Context & Định dạng đa nhóm (Multi-Company Authentication cho AI)
 3.3. Thiết kế Cơ sở dữ liệu
-*   3.3.1. Ràng buộc thiết kế theo Multi-tenancy (Company_ID isolation)
-*   3.3.2. Cấu trúc bảng phân hệ Identity (Users, Roles, Company...)
-*   3.3.3. Cấu trúc bảng phân hệ Core (Invoices, Invoice Lines, Journal Entries...)
-*   3.3.4. Chi tiết các trường dữ liệu quan trọng
+*   3.3.1. Ràng buộc thiết kế theo Multi-tenancy (Company_ID isolation) và chính sách khóa ngoại
+*   3.3.2. Cấu trúc bảng phân hệ Identity (Users, Roles, Permissions, Companies, Audit Logs)
+*   3.3.3. Cấu trúc bảng phân hệ Core (Invoices, Invoice Lines, Journal Entries, Payments, Bank...)
+*   3.3.4. Cấu trúc bảng phân hệ Common (Attachments, Comments, Entity Links)
+*   3.3.5. Chiến lược Index và tối ưu hiệu năng truy vấn
 
 **CHƯƠNG 4. KIỂM THỬ VÀ TRIỂN KHAI HỆ THỐNG**
 4.1. Kiểm thử phần mềm

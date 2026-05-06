@@ -20,6 +20,8 @@ Hệ thống quản trị tài chính EFMS là một nền tảng rộng lớn b
 
 - **Hệ thống Quản lý Quy trình và Phê duyệt tự động (Workflow Engine System):** Dự án số hóa hoàn toàn các luồng nghiệp vụ trên giấy thông qua sự kết hợp với engine BPMN Camunda Platform 8. Tính năng điển hình nằm trong khuôn khổ là quy trình tự động hóa quy trình phê duyệt công nợ / Hóa đơn đầu vào (AP Bill Approval Process). Quy trình hỗ trợ tích hợp phê duyệt tuần tự nhiều cấp độ động (dựa trên chức vụ, phòng ban, hoặc hạn mức giá trị hóa đơn), kết hợp hài hoà giữa sự tham gia xét duyệt nghiệp vụ của con người (User Tasks) và các hệ thống tính toán (Service Tasks).
 
+- **Phân hệ Tiện ích Dùng chung (EFMS Common Service):** Đóng vai trò là lớp cơ sở hạ tầng phục vụ ngang (Cross-cutting Infrastructure Layer) cho toàn bộ hệ thống. Phân hệ này cung cấp các tính năng dùng chung hoàn toàn độc lập về mặt nghiệp vụ, bao gồm quản lý Tệp đính kèm (Attachments) và Bình luận nội bộ (Comments) cho bất kỳ đối tượng nghiệp vụ nào trong hệ thống (ví dụ: gắn hóa đơn, chứng từ kế toán). Điểm đặc sắc về mặt thiết kế là việc áp dụng mô hình liên kết đa hình (Polymorphic Association) thông qua bảng trung gian `entity_links`, cho phép mở rộng phạm vi liên kết đến bất kỳ thực thể mới nào mà không phá vỡ cấu trúc dữ liệu hiện có. Phân hệ cũng áp dụng cơ chế Batch Fetching khi truy xuất thông tin tác giả từ Identity Service, đảm bảo hiệu năng tối ưu và tránh lỗi N+1 Query đặc trưng trong các hệ thống microservices phân tán.
+
 ## C. Cấu trúc chuyên đề
 Để giúp người đọc có cái nhìn trực quan, logic xuyên suốt từ bước khởi thảo ý tưởng đến khi hiện thực hoá toàn diện, tiến trình nghiên cứu xây dựng phần mềm được tổ chức, hệ thống thành 5 phần cốt lõi:
 

@@ -45,6 +45,17 @@ Multi-tenant (Đa khách thuê hay đa chi nhánh) là một cấu trúc kiến 
   + *Ưu điểm:* Cấp độ bảo mật được đánh giá tuyệt đối không có lỗ hổng dò rỉ, đồng thời bảo đảm phân luồng hiệu năng tài nguyên độc lập 100%. 
   + *Khuyết điểm:* Rất khó thiết lập chi phí đầu tư máy ban đầu (Sẽ cực kỳ đắt đỏ), quy trình backup và hệ thống nâng cấp vận hành (DevOps) theo thời gian sẽ đòi hỏi kỹ thuật cao vô vàn hơn mức bình thường.
 
+### 1.1.4. Giao tiếp giữa các Dịch vụ (Service-to-Service Communication) và Batch Fetching
+
+**Khái niệm về giao tiếp nội bộ trong kiến trúc Microservices:**
+Trong một hệ sinh thái Microservices, các dịch vụ độc lập nhau về mặt cơ sở dữ liệu, dẫn đến một thách thức kỹ thuật phổ biến: khi cần hiển thị một đối tượng đầy đủ thông tin (ví dụ: danh sách hóa đơn kèm tên người tạo), dịch vụ xử lý (Core Service) cần lấy thêm dữ liệu người dùng từ một dịch vụ khác (Identity Service). Nếu không được thiết kế cẩn thận, mô hình này sẽ dẫn đến lỗi **N+1 Query** — tức là với N bản ghi hóa đơn, hệ thống sẽ phát sinh thêm N lần gọi riêng lẻ sang Identity Service để lấy tên người tạo, gây ra sự cố thắt nút cổ chai nghiêm trọng về hiệu năng.
+
+**Cơ chế Batch Fetching (Lấy dữ liệu theo lô):**
+Để giải trừ hoàn toàn lỗi N+1 Query, kiến trúc EFMS áp dụng kỹ thuật **Batch Fetching** — một chiến lược tổng hợp các yêu cầu tra cứu riêng lẻ thành một lần gọi duy nhất. Cụ thể, Identity Service cung cấp một **Internal API** chuyên dụng tại endpoint `/internal/users/batch`, cho phép các dịch vụ khác gửi một danh sách UUID người dùng trong một request HTTP duy nhất và nhận về toàn bộ thông tin tương ứng. Cơ chế giao tiếp nội bộ này được thực thi thông qua `WebClient` (reactive non-blocking HTTP client) của Spring WebFlux, đảm bảo quá trình enrichment dữ liệu (bổ sung tên, avatar tác giả) diễn ra hiệu quả mà không tạo gánh nặng tải bổ sung lên hạ tầng.
+
+**Ứng dụng thực tiễn trong EFMS:**
+Mô hình Batch Fetching được áp dụng nhất quán tại hai điểm trong hệ thống. Thứ nhất, **Core Service** sử dụng cơ chế này khi hiển thị danh sách hóa đơn, tổng hợp toàn bộ UUID của `created_by` và `posted_by` trong tập kết quả để gọi một lần duy nhất sang Identity Service. Thứ hai, **Common Service** áp dụng tương tự khi trả về danh sách bình luận hoặc tệp đính kèm, cần làm giàu thông tin `author_id` thành tên hiển thị và ảnh đại diện người dùng. Thiết kế này đảm bảo rằng dù số lượng bản ghi tăng lên hàng trăm hay hàng nghìn, số lần gọi giữa các dịch vụ vẫn luôn được kiểm soát ở mức tối thiểu (O(1) thay vì O(N)).
+
 ## 1.2. Front-End
 
 ### 1.2.1. React.js và Vite
@@ -176,9 +187,44 @@ PostgreSQL (hoặc gọi ngắn gọn là Postgres) là một Hệ quản trị 
 **Lập luận nền móng lựa chọn chốt hạ cho Cõi Mạng Tài Chính EFMS:**
 Hệ thống tài quản EFMS - mang trọng thiên luân quản lý các nghiệp mảng định khoản Sổ Cái (General Ledger), cân đong các cán cân phân định hóa đơn thu chi đắt đỏ - tuyệt nhiên quy thuận trước PostgreSQL bởi rập giới răn cấu kết nguyên chỉnh dữ kiện tài chính liên phân vùng (Data integrity in Multi-tenant Multi-schemas). Các Microservices Core EFMS cắt riêng lấy PostgreSQL để triển khai kỹ năng lược đồ đa phân tách (Separate-Schema for each Tenant), biến kho báu của mỗi Công ty chi nhánh bỗng chốc rúc lồng kẹp kín vô hạn cách ly tuyệt trùng. Ngoài ra, thay vì nhồi lắp cấu hình CSDL dạng NoSQL (như MongoDB rỗng liên kết), tính khắt khe đóng chốt các lèn khóa ForeignKey, vòi vươn Transaction siêu bảo an của Postgres hứa hẹn vùi lấp tiệt đường chặn mọi sai số kế toán ở độ phẩy tỷ phân trăm thập kỷ mà hệ thống tài nguyên EFMS phải gánh trên vai trọng trách đại diện tập đoàn.
 
-## 1.6. Kiểm thử phần mềm
+## 1.6. Tiêu chuẩn Thiết kế Hệ thống (System Design Standards)
 
-### 1.6.1. Giới thiệu kiểm thử hộp đen (Black-box) và kiểm thử API
+### 1.6.1. Chuẩn Phản hồi Thống nhất (Standard Response Wrapper)
+
+**Khái niệm và sự cần thiết:**
+Trong một hệ thống Microservices với nhiều dịch vụ độc lập, việc mỗi service trả về cấu trúc dữ liệu phản hồi (Response) theo định dạng riêng biệt sẽ gây ra sự hỗn loạn cho tầng Frontend và các client tích hợp. Mỗi lần xử lý kết quả trả về, code phía Client phải có logic riêng để phân tích từng định dạng khác nhau, làm tăng độ phức tạp bảo trì và rủi ro sai sót. Để giải quyết triệt để vấn đề này, kiến trúc EFMS áp đặt một **Chuẩn phản hồi thống nhất (Unified Response Contract)** bắt buộc cho toàn bộ API trên tất cả các dịch vụ.
+
+**Cấu trúc đối tượng `ApiResponse<T>`:**
+Mọi endpoint REST trong hệ thống EFMS — từ Identity Service, Core Service đến Common Service — đều phải trả về dữ liệu được bọc trong đối tượng generic `ApiResponse<T>`. Cấu trúc này bao gồm ba trường cốt lõi: `status` (mã HTTP tương ứng), `message` (thông điệp mô tả kết quả), và `data` (payload thực tế kiểu generic T). Cách tiếp cận này đảm bảo rằng Frontend chỉ cần một hàm xử lý phản hồi duy nhất cho mọi loại dữ liệu, đồng thời tách bạch rõ ràng thông tin metadata (trạng thái, thông báo) với nội dung dữ liệu nghiệp vụ.
+
+**Cơ chế xử lý ngoại lệ toàn cục (Global Exception Handler):**
+Bên cạnh luồng thành công, một thành phần quan trọng không kém là `@RestControllerAdvice` — lớp xử lý ngoại lệ toàn cục được triển khai ở mỗi dịch vụ. Bất kỳ ngoại lệ nào ném ra trong quá trình xử lý nghiệp vụ (từ lỗi validation, lỗi logic đến lỗi cơ sở dữ liệu) đều được bắt tập trung tại đây và định dạng lại thành đối tượng `ApiResponse` với `status` code HTTP phù hợp. Thiết kế này ngăn chặn việc để lộ các stack trace nhạy cảm ra client, đồng thời đảm bảo mọi phản hồi lỗi đều có cấu trúc nhất quán, có thể phân tích và xử lý một cách có hệ thống từ phía Frontend.
+
+### 1.6.2. Xử lý Lịch sử Thao tác (Audit Logging Pattern)
+
+**Vai trò và tầm quan trọng của Audit Logging:**
+Trong lĩnh vực phần mềm tài chính - kế toán, yêu cầu về **tính truy xuất nguồn gốc (Traceability)** và **minh bạch thao tác (Operational Transparency)** là yêu cầu bắt buộc không thể thiếu. Bất kỳ sự thay đổi nào đối với dữ liệu tài chính nhạy cảm đều cần được lưu vết chi tiết để phục vụ kiểm toán nội bộ, điều tra sai phạm và đáp ứng các yêu cầu pháp lý về lưu trữ hồ sơ kế toán. Hệ thống EFMS chuẩn hóa Audit Logging như một quy trình bắt buộc áp dụng xuyên suốt tất cả các dịch vụ.
+
+**Cơ chế ghi nhật ký thay đổi:**
+Mọi hành động tạo mới (Create), cập nhật (Update) hoặc xóa (Delete) tác động đến các Entity chính — bao gồm người dùng (Users), hóa đơn (Invoices) và chứng từ kế toán (Journal Entries) — đều được ghi nhận vào bảng `audit_logs` tương ứng tại từng dịch vụ. Mỗi bản ghi nhật ký lưu trữ đầy đủ các thông tin: loại hành động (`action`), định danh người thực hiện (`changed_by` — trích xuất từ JWT Context), thời điểm thay đổi (`changed_at`), cũng như snapshot dữ liệu trước (`old_data`) và sau (`new_data`) thay đổi dưới dạng JSONB. Cấu trúc lưu trữ trạng thái trước-sau này cho phép tái hiện hoàn toàn lịch sử thay đổi của bất kỳ bản ghi nào tại bất kỳ thời điểm nào.
+
+**Tích hợp với hệ thống Frontend:**
+Để cung cấp khả năng truy xuất lịch sử thao tác cho người dùng cuối, mỗi dịch vụ cung cấp một API chuyên dụng tại endpoint `/v1/audit-logs/record`. Tầng Frontend có thể truy vấn endpoint này để hiển thị bảng lịch sử thay đổi (Audit Trail) trực tiếp trên giao diện chi tiết của từng đối tượng nghiệp vụ. Cách tiếp cận này đặc biệt có giá trị đối với quy trình phê duyệt hóa đơn, nơi Finance Manager cần xem xét toàn bộ chuỗi hành động từ lúc tạo đến lúc được duyệt.
+
+### 1.6.3. Cấu trúc Mã nguồn và Quy định Thư viện (Package Convention & Library Standards)
+
+**Quy ước đặt tên gói (Package Naming Convention):**
+Để đảm bảo tính nhất quán và khả năng điều hướng mã nguồn giữa các dịch vụ, kiến trúc EFMS áp đặt một quy ước cấu trúc gói (Package Structure) thống nhất cho tất cả các Microservice. Mỗi dịch vụ tuân thủ định danh `com.linhdv.[service_name]` làm package gốc (ví dụ: `com.linhdv.efms_core_service`). Bên trong, mã nguồn được phân tách thành các package chức năng rõ ràng: `config/` (cấu hình bean, Security, CORS), `controller/` (lớp giao tiếp API), `dto/` (Data Transfer Objects bao gồm `request/`, `response/`, `common/`), `entity/` (JPA Entity mapping), `mapper/` (MapStruct interface), `repository/` (JPA Repository), `security/` (JWT Filter nội bộ) và `service/impl/` (Business Logic). Sự phân tách nghiêm ngặt này đảm bảo mỗi thành viên trong đội phát triển có thể định vị và sửa đổi bất kỳ đoạn logic nào mà không cần hiểu toàn bộ codebase.
+
+**Quy định sử dụng thư viện Lombok:**
+Nhằm giảm thiểu mã soạn sẵn (Boilerplate Code) không mang giá trị nghiệp vụ, toàn bộ các class cấu trúc dữ liệu (DTO, Entity) trong EFMS bắt buộc phải sử dụng thư viện **Lombok**. Cụ thể, các annotation `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor` được dùng để tự động sinh getter/setter, constructor và builder pattern. Đáng chú ý, quy định ưu tiên **Constructor Injection** thông qua `@RequiredArgsConstructor` thay vì Field Injection qua `@Autowired` — một thực hành tốt giúp tăng tính rõ ràng về phụ thuộc (Explicit Dependencies) và dễ dàng kiểm thử đơn vị (Unit Testing) hơn.
+
+**Quy định bắt buộc về kiểu dữ liệu tiền tệ (`BigDecimal`):**
+Mọi thao tác tính toán liên quan đến giá trị tiền tệ (số tiền hóa đơn, tỷ giá hối đoái, số dư tài khoản) đều bắt buộc phải sử dụng kiểu dữ liệu **`BigDecimal`** thay vì các kiểu số thực nguyên thủy như `float` hay `double`. Đây là một yêu cầu kỹ thuật cốt lõi xuất phát từ đặc tính của kiểu số thực nhị phân IEEE 754: các phép tính `float`/`double` tích lũy sai số làm tròn (Rounding Error) theo cấp số lũy thừa, hoàn toàn không chấp nhận được trong bài toán kế toán tài chính nơi từng đồng tiền phải khớp chính xác tuyệt đối. `BigDecimal` cung cấp độ chính xác tùy ý và kiểm soát hoàn toàn chế độ làm tròn (Rounding Mode), đảm bảo tính toàn vẹn số liệu cho toàn bộ vòng đời của một giao dịch tài chính.
+
+## 1.7. Kiểm thử phần mềm
+
+### 1.7.1. Giới thiệu kiểm thử hộp đen (Black-box) và kiểm thử API
 **Lý luận khoa học thuật Kiểm định Chất Lượng (Quality Assurance Khái Niệm):**
 Trong tiến trình vòng đời nuôi nắn mã phần mềm SDLC (Software Development Life Cycle), Kiểm thử vĩnh viễn không phải khâu vá víu đuôi lót hắt hiu mà là trọn một chuỗi hệ bện song song kiểm soát vòng nguy hại rập rình. Hai luồng chủ lưu chi phối vòng quay dự án thực tiễn chính là Kiểm thử Hộp Đen (Black-box Testing) nhắm đến khối ngoài và Phân lớp Lưới kiểm thử Giao thức Mạng (API / Integration Testing) nhắm đến luồng ngầm lõi.
 - **Kiểm thử hộp đen (Black-box Testing):** Là một chiến thuật kiểm thử phần mềm ở cấp giao diện mặt, nơi mà các chuyên viên Test (QA/QC Engineer) rũ bỏ toàn bộ tính ngó lơ với mớ cấu trúc đường luồng thuật toán chạy bên trong cục Code. Họ coi cục máy giống như một chiếc Hộp màu Đen bịt kín, chỉ đưa nhồi vào hệ thống một Nhánh Dữ Kiện Định Mệnh Đầu Vào (Input) và dõi bám bắt mong chờ Hệ Trả Ra Một Khối Kết Quả Ra Hệ Đầu Cấu Cuối (Expected Output) xem hai mặt có khớp nối với luật Nghiệp Vụ phác thảo ban dòng đầu hay không. 

@@ -60,6 +60,11 @@ The Core service handles all major financial accounting operations, double-entry
 - **Package**: `com.linhdv.efms_core_service`
 - **Identity Links**: `company_id`, `created_by`, `updated_by` are `UUID` strings referencing remote entities in `efms-identity-service`. Core handles isolation through `companyId` filtering manually mapped on the service layer, bypassing database-level FK limits.
 - **Data Mapping**: Use `MapStruct` extensively for `Entity` to `DTO` conversions. Focus on `ApiResponse<T>` output format.
+- **Security & Authorization**:
+    - Uses `spring-boot-starter-security` for local authorization.
+    - **`GatewayHeaderFilter`**: A custom security filter that intercepts `X-User-*` headers from the API Gateway.
+    - **SecurityContext**: Populates `SecurityContextHolder` with user identity and authorities derived from the `X-User-Permission` header.
+    - **Method Security**: Uses `@PreAuthorize("hasAuthority('RESOURCE:ACTION')")` at the Controller or Service level to enforce fine-grained access control (e.g., `@PreAuthorize("hasAuthority('INVOICE:CREATE')")`).
 
 ## Code Structure Rules
 - **`controller`**: Grouped logically: `controller.accounting` for accounts/journals, `controller.finance` for banks, etc. Returns structured `ApiResponse`.

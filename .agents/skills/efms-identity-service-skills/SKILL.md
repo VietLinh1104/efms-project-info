@@ -46,7 +46,10 @@ The Identity service manages the organizational structure and access control (Au
 ## Implementation Details
 
 - **Package**: `com.linhdv.efms_identity_service`
-- **Security**: JWT-based authentication using **jjwt 0.11.5**. User passwords hashed securely with **BCrypt**.
+- **Security & Authorization**: 
+    - JWT-based authentication using **jjwt 0.11.5**. User passwords hashed securely with **BCrypt**.
+    - **Shared Trust**: Can also act as a downstream service, accepting `X-User-*` headers from the Gateway.
+    - **RBAC**: Uses Spring Security's `SecurityContextHolder` and `@PreAuthorize` (e.g., `@PreAuthorize("hasAuthority('USER:READ')")`) to protect administrative endpoints.
 - **Data Mapping**: Mandatory use of **MapStruct** (`mapper` package) for `Entity` to `DTO` conversions.
 - **Response Format**: All REST APIs must wrap their return data in the generic `ApiResponse<T>` (`wrapper` / `dto.common` package) object.
 - **Validation**: Ensure `@Valid` is used for all incoming request payloads (`dto/request`).

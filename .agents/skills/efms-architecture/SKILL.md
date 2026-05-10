@@ -21,7 +21,11 @@ This skill provides an overview of the EFMS backend architecture, which consists
   - Prefix `http://localhost:8080/api/core/**` routes to `efms-core-service`.
 - **Loose Coupling**: Services communicate via REST APIs or Feign Client. Core service references Identity entities (users, companies) exclusively bypassing their UUIDs. There are NO hard database-level foreign keys across microservices.
 - **Multi-tenancy**: Every business entity is linked to a `company_id`. Queries must isolate data by this ID.
-- **Authentication**: JWT-based authentication. Client calls `/api/identity/auth/login` to retrieve a Token, which is then validated by `efms-api-gateway` in subsequent requests before being forwarded to downstream services.
+- **Authentication & Authorization**: 
+  - **Phase 1 (Gateway)**: Validates JWT token from the `Authorization` header.
+  - **Phase 2 (Injection)**: Gateway extracts user claims and injects them into custom headers (`X-User-Id`, `X-User-Email`, `X-User-Company-Id`, `X-User-Permission`).
+  - **Phase 3 (Local Context)**: Downstream services use a `GatewayHeaderFilter` to read these headers and populate the Spring Security `SecurityContextHolder`.
+  - **Phase 4 (Access Control)**: Developers use `@PreAuthorize("hasAuthority('...')")` on methods to enforce permissions.
 - **Standard API Responses**: All REST APIs must use the generic `ApiResponse<T>` wrapper for consistency (`status`, `message`, `data`).
 
 ## Technology Stack

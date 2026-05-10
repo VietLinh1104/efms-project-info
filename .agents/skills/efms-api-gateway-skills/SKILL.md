@@ -19,7 +19,7 @@ Requests are mapped dynamically based on the URL prefix from the client:
 
 ## Security Mechanism
 - **JWT Decoding**: The Gateway validates the JWT Secret (shared or central).
-- **Authorization Flow**: The Gateway performs structural and basic validity checks of the JWT token. Once verified, it passes the request (potentially appending userId/headers) downstream. Detailed action-level permission checks (RBAC) are handled by the inner Identity and Core services, not the Gateway.
+- **Authorization Flow**: The Gateway performs structural and basic validity checks of the JWT token. Once verified, it extracts claims (userId, email, companyId, permissions) and injects them into custom headers (`X-User-Id`, `X-User-Email`, `X-User-Company-Id`, `X-User-Permission`) for downstream services. Detailed action-level permission checks (RBAC) are handled by the inner services using these headers.
 
 ## Guidelines & Code Structure
 - **Package**: `com.linhdv.efms_api_gateway`

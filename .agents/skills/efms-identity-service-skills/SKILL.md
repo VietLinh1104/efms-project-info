@@ -29,6 +29,11 @@ The Identity service manages the organizational structure and access control (Au
 - **Auth Controller**:
   - `POST /auth/login`: Authenticate and return JWT token.
   - `POST /auth/register`: Create a new user account.
+- **OAuth Controller**:
+  - `GET /.well-known/oauth-authorization-server`: OAuth 2.1 metadata endpoint.
+  - `GET /oauth/authorize`: Authorization endpoint (redirects to frontend login with oauth params).
+  - `GET /oauth/callback`: Callback handler for internal token generation.
+  - `POST /oauth/token`: Token endpoint for authorization_code exchange.
 - **User Controller**:
   - `/v1/users`: Management of user profiles (`id`, `update`, `delete`, `getAllUsers`).
 - **Role Controller**:

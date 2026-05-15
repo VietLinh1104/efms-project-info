@@ -22,6 +22,7 @@ This skill defines the structural and architectural guidelines for the EFMS (Ent
   The backend is split into two primary services behind an API Gateway:
   - **Identity Service (`/api/identity`)**: Manages multi-tenancy (`companies`), `users`, `roles`, and `permissions`. Handles login and JWT token distribution.
   - **Core Service (`/api/core`)**: Handles all financial entities like `invoices`, `payments`, `journal_entries`, `accounts`, `partners`, and `fiscal_periods`.
+  - **Common Service (`/api/common`)**: Handles attachments, comments, and audit logs globally across the system.
   
 - **Authentication & Tenants**:
   - Standard API requests MUST include the `Authorization: Bearer <token>` header.
@@ -41,8 +42,8 @@ This skill defines the structural and architectural guidelines for the EFMS (Ent
   All external API service instances are initialized and exported from `src/api/index.ts`. The project uses an OpenAPI generator, typically meaning endpoints reside in `src/api/generated/`.
   - **Identity API**: Context `/api/identity/...`
   - **Core API**: Context `/api/core/...`
-  - **Audit Logging API**: Both services have `/v1/audit-logs/record` endpoints.
-  Do not initialize Axios instances directly in your components.
+  - **Common API**: Context `/api/common/...`
+  - **Audit Logging API**: Handled mostly via Identity and Common.
 
 - **Generated Types and Models**:
   - ALWAYS import strong typings (like `InvoiceResponse`, `CreateInvoiceRequest`, etc.) from `src/api/generated` rather than creating redundant manual types.

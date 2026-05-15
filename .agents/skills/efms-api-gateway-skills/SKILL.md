@@ -16,6 +16,7 @@ The API Gateway is the central entry point for all requests to the EFMS backend 
 Requests are mapped dynamically based on the URL prefix from the client:
 - `http://localhost:8080/api/identity/**` -> Forwards to **`efms-identity-service`**
 - `http://localhost:8080/api/core/**` -> Forwards to **`efms-core-service`**
+- `http://localhost:8080/api/common/**` -> Forwards to **`efms-common-service`**
 
 ## Security Mechanism
 - **JWT Decoding**: The Gateway validates the JWT Secret (shared or central).

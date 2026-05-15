@@ -38,12 +38,7 @@ efms-mcp-server/
 │   │   └── efmsClient.ts     # axios instance với auth interceptor
 │   ├── tools/
 │   │   ├── index.ts          # registerAllTools()
-│   │   ├── invoices.ts
-│   │   ├── payments.ts
-│   │   ├── journals.ts
-│   │   ├── partners.ts
-│   │   ├── accounts.ts
-│   │   └── reports.ts
+│   │   └── efms.ts           # All registered tools
 │   └── types/
 │       └── efms.ts
 ├── package.json
@@ -161,29 +156,30 @@ Vì sử dụng Remote HTTP Server, cấu hình trong `claude_desktop_config.jso
 Mọi tool đều theo cấu trúc này:
 
 ```typescript
-// src/tools/invoices.ts
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+// src/tools/efms.ts
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { efmsClient } from "../client/efmsClient.js";
+import { createEfmsClient } from "../client/efmsClient.js";
 
-export function registerInvoiceTools(server: McpServer, ctx?: { companyId?: string }) {
+export function registerEfmsTools(server: McpServer, ctx: { token: string; companyId?: string }) {
+  const client = createEfmsClient(ctx.token, ctx.companyId);
+
   server.tool(
     "list_invoices",
-    "Lấy danh sách invoice từ EFMS, có thể filter theo trạng thái và ngày",
+    "Liệt kê danh sách hóa đơn",
     {
-      status: z.enum(["draft", "posted", "paid", "cancelled"]).optional(),
-      type: z.enum(["AR", "AP"]).optional(),
-      fromDate: z.string().optional().describe("Định dạng YYYY-MM-DD"),
-      toDate: z.string().optional().describe("Định dạng YYYY-MM-DD"),
+      status: z.string().optional(),
+      invoiceType: z.string().optional(),
+      partnerId: z.string().optional(),
       page: z.number().default(0),
       size: z.number().default(20),
     },
-    async ({ status, type, fromDate, toDate, page, size }) => {
-      const res = await efmsClient.get("/api/core/v1/invoices", {
-        params: { status, type, fromDate, toDate, page, size },
+    async (params) => {
+      const response = await client.get("/api/core/v1/invoices", { 
+        params: { ...params, companyId: ctx.companyId } 
       });
       return {
-        content: [{ type: "text", text: JSON.stringify(res.data, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(response.data.data, null, 2) }],
       };
     }
   );
@@ -195,14 +191,10 @@ export function registerInvoiceTools(server: McpServer, ctx?: { companyId?: stri
 ```typescript
 // src/tools/index.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerInvoiceTools } from "./invoices.js";
-import { registerPaymentTools } from "./payments.js";
-// ... import các module khác
+import { registerEfmsTools, type McpContext } from "./efms.js";
 
-export function registerAllTools(server: McpServer, ctx?: { userId?: string; companyId?: string }) {
-  registerInvoiceTools(server, ctx);
-  registerPaymentTools(server, ctx);
-  // ...
+export function registerAllTools(server: McpServer, ctx: McpContext) {
+  registerEfmsTools(server, ctx);
 }
 ```
 
@@ -216,8 +208,8 @@ export function registerAllTools(server: McpServer, ctx?: { userId?: string; com
 - `create_invoice` — tạo draft, validate fiscal_period mở
 - `confirm_invoice` — POST /post → trigger Camunda
 - `delete_invoice` — chỉ khi status = draft
-- `list_approval_tasks` — Tasklist API v1, trả về kèm taskId
-- `complete_approval_task` — Zeebe REST API v2 `/v2/user-tasks/{taskId}/completion`
+- `list_approval_tasks` — Gọi `/api/core/v1/invoice-tasks/tasks` trả về danh sách kèm taskId
+- `complete_approval_task` — (Sắp tới) Tích hợp Zeebe REST API v2 `/v2/user-tasks/{taskId}/completion`
 
 ### Payments
 - `list_payments`, `get_payment`, `create_payment`

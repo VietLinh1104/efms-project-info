@@ -12,6 +12,7 @@ The **EFMS Common Service** is responsible for managing cross-cutting concerns t
 Specifically:
 - **Attachments**: File metadata and storage management (file sizes, names, URLs).
 - **Comments**: Discussions, activity logs, and workflow approval comments.
+- **Audit Logs**: Tracking historical changes (`old_data`, `new_data`, `action`) made to records across different tables, keeping track of who made the changes and when.
 
 It typically runs on Port `8083` and expects incoming gateway requests prefixing `/api/common`.
 

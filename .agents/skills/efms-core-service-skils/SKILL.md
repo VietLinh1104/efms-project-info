@@ -20,7 +20,7 @@ The Core service handles all major financial accounting operations, double-entry
 - `partners`: Customers and vendors.
 - `journal_entries` & `journal_lines`: Double-entry accounting records linking to `accounts`.
 - `invoices` & `invoice_lines`: Receivables and payables tracking.
-- `payments`: Bank/cash operations mapped to invoices or direct journals.
+- `payments` & `invoice_payments`: Bank/cash operations and allocation mapping to invoices.
 - `bank_accounts` & `bank_transactions`: Bank statements and reconciliation data.
 
 ## Workflow & Automation (Camunda 8)
@@ -42,13 +42,21 @@ The Core service handles all major financial accounting operations, double-entry
   - `/v1/accounting/accounts`: Chart of Accounts operations.
 - **Journal Entries**:
   - `/v1/accounting/journals`: Create/Update (`draft`), Detail, Delete (`draft`).
-- **Invoices**:
+- **Invoices & Approvals**:
   - `/v1/invoices`: CRUD for AP/AR. Draft state enables deletion.
+  - `/v1/invoice-tasks`: Invoice approval tasks and actions.
 - **Payments**:
   - `/v1/payments`: General CRUD operations.
   - `POST /v1/payments/{id}/post`: Post payment to the General Ledger (GL). Unlocks financial impact.
   - `POST /v1/payments/{id}/allocate`: Allocate previously received/paid amounts directly to open `Invoices`.
-- **Other Tags Identified**: *Bank Reconciliation, Bank Transactions, Fiscal Periods, Trial Balance, Reports.*
+- **Finance Operations**:
+  - `/v1/finance/bank-transactions`: CRUD and mapping.
+  - `/v1/finance/reconciliation`: Bank reconciliation logic.
+- **Other Accounting**:
+  - `/v1/accounting/fiscal-periods`: Managing fiscal period lifecycle.
+  - `/v1/accounting/trial-balance`: Generating trial balances.
+- **Reporting**:
+  - Dedicated report endpoints mapped in `controller/report`.
 
 ## Accounting Rules
 - **Double-Entry**: Every `journal_entry` must generate at least two `journal_lines` where total debits strictly equal total credits (`debit = credit`).

@@ -21,6 +21,7 @@ The Identity service manages the organizational structure and access control (Au
 - `role_permissions`: Mapping of `role_id` and `permission_id`.
 - `users`: `id` (UUID), `company_id` (FK to companies), `role_id` (FK to roles), `name`, `email`, `password`, `is_active`.
 - `audit_logs`: `id` (UUID), `table_name`, `record_id`, `action`, `changed_by`, `changed_at`, `old_data` (JSON), `new_data` (JSON).
+- `oauth_clients`: OAuth 2.1 client registration for external application access (e.g. MCP servers).
 
 ## API Endpoints (v1)
 

@@ -5,83 +5,113 @@ description: Financial and accounting operations for EFMS.
 
 # EFMS Core Service
 
-The Core service handles all major financial accounting operations, double-entry ledgers, and cash flows.
+The Core Service handles all major financial accounting operations, double-entry ledger automation, and cash flows. It is built with **Spring Boot 3** and integrates with **Camunda 8 SaaS** for approval workflows.
 
-## Core Responsibilities
-- **General Ledger**: Management of the Chart of Accounts (COA) and `journal_entries` for double-entry accounting.
-- **Accounts Receivable (AR) & Accounts Payable (AP)**: Handling `invoices` (billing) and `payments` (cash receipts and disbursements).
-- **Cash & Bank**: Management of `bank_accounts` and reconciliation of `bank_transactions`.
-- **Entities**: Administration of `partners` (customers and vendors) and their balances.
-- **Reporting**: Trial balances, aging reports, etc.
+> **🎓 Đồ án Scope**: Module này đã được tinh gọn so với thiết kế ERP đầy đủ. Chỉ giữ các module thiết yếu cho luồng nghiệp vụ lõi (Procure-to-Pay). Xem mục cuối để biết chi tiết.
+
+---
+
+## Core Responsibilities (Active)
+- **Chart of Accounts (COA)**: Quản lý danh mục tài khoản kế toán.
+- **Partners**: Quản lý danh bạ Khách hàng (AR) và Nhà cung cấp (AP).
+- **Invoices (AP Bill / AR Invoice)**: Tạo, trình duyệt qua Camunda, và theo dõi trạng thái hóa đơn.
+- **Payments**: Ghi nhận thanh toán (Cash In/Out), phân bổ vào hóa đơn, post lên Sổ cái.
+- **Bank Accounts**: Quản lý tài khoản ngân hàng dùng làm nguồn tiền cho Payments.
+- **Journal Entries (Read-only)**: Xem danh sách bút toán kép được hệ thống tự động sinh ra.
+
+---
 
 ## Core Database Schema
-- `fiscal_periods`: Accounting cycles (open/closed).
+> DB Schema vẫn giữ nguyên đầy đủ. Các bảng không dùng (xem bên dưới) chỉ bị bỏ qua ở tầng Application.
+
 - `accounts`: Chart of accounts (asset, liability, equity, revenue, expense).
 - `partners`: Customers and vendors.
-- `journal_entries` & `journal_lines`: Double-entry accounting records linking to `accounts`.
-- `invoices` & `invoice_lines`: Receivables and payables tracking.
+- `journal_entries` & `journal_lines`: Double-entry accounting records — **chỉ ghi bởi hệ thống**, không cho phép nhập tay.
+- `invoices` & `invoice_lines`: Receivables (AR) and payables (AP) tracking.
 - `payments` & `invoice_payments`: Bank/cash operations and allocation mapping to invoices.
-- `bank_accounts` & `bank_transactions`: Bank statements and reconciliation data.
+- `bank_accounts`: Bank accounts used as funding sources for payments.
+- `fiscal_periods` *(schema only)*: Tồn tại trong DB nhưng không có ORM mapping hay UI/API ở phạm vi đồ án.
+- `bank_transactions` *(schema only)*: Tồn tại trong DB nhưng không có ORM mapping hay UI/API ở phạm vi đồ án.
+
+---
 
 ## Workflow & Automation (Camunda 8)
 - **Engine**: Integrates with Camunda 8 SaaS via `camunda-spring-boot-starter` (8.8.x).
-- **Process Instances**: Instantiated dynamically (e.g., in `InvoiceService.confirm` for AP Bills via `camundaClient.newCreateInstanceCommand()`).
-- **User Tasks**: Việc lấy danh sách các giao việc đang thực hiện (User Tasks) dùng **Tasklist API v1** thông qua `InvoiceService.getAllApprovalTasks(page, size)`, hệ thống backend giờ sẽ tự map các Task vào data Invoice tương ứng và trả về `PagedResponse<InvoiceResponse>` có bao gồm thuộc tính `taskId`, `taskName`. Complete task sẽ dùng **Zeebe REST API v2** (`/v2/user-tasks/{taskId}/completion`).
-- **Job Workers**: Uses `@JobWorker(type = "...")` to execute automated business tasks driven by BPMN gateways (e.g., creating journal entries, notifying rejections).
-- **Variables**: Process context is passed via `Map` (e.g., `approved`, `totalAmount`, `invoiceId`). Always map workflow results back to database fields (e.g., `approval_status`, `camunda_process_id`) to track state in Core.
+- **Process Instances**: Khởi động trong `InvoiceService.confirm()` cho AP Bill qua `camundaClient.newCreateInstanceCommand()`.
+- **User Tasks**: Lấy danh sách Task đang chờ duyệt dùng **Tasklist API v1** trong `InvoiceService.getAllApprovalTasks(page, size)`. Backend tự map Task → Invoice và trả `PagedResponse<InvoiceResponse>` kèm `taskId`, `taskName`. Complete task dùng **Zeebe REST API v2** (`/v2/user-tasks/{taskId}/completion`).
+- **Job Workers** (`service/worker/`):
+  - `CreateJournalEntryWorker` (type: `create-journal-entry`): Được trigger khi Invoice được **Duyệt**. Cập nhật `approval_status = approved` và **phải gọi `JournalService.createFromInvoice()`** để sinh bút toán kép tự động — (**⚠️ TODO chưa implement**).
+  - `NotifyRejectionWorker` (type: `notify-rejection`): Cập nhật `approval_status = rejected` khi bị từ chối.
+- **Variables**: Context truyền qua `Map` (e.g., `approved`, `totalAmount`, `invoiceId`). Kết quả worker phải được map lại vào DB (`approval_status`, `camunda_process_id`).
+
+---
 
 ## API Endpoints (v1)
 
 **Context Path:** `http://localhost:8080/api/core` (routed via API Gateway)
 
-- **Partners**:
-  - `/v1/partners`
-- **Bank Accounts**:
-  - `/v1/finance/bank-accounts`
-- **Accounts**:
-  - `/v1/accounting/accounts`: Chart of Accounts operations.
-- **Journal Entries**:
-  - `/v1/accounting/journals`: Create/Update (`draft`), Detail, Delete (`draft`).
-- **Invoices & Approvals**:
-  - `/v1/invoices`: CRUD for AP/AR. Draft state enables deletion.
-  - `/v1/invoice-tasks`: Invoice approval tasks and actions.
-- **Payments**:
-  - `/v1/payments`: General CRUD operations.
-  - `POST /v1/payments/{id}/post`: Post payment to the General Ledger (GL). Unlocks financial impact.
-  - `POST /v1/payments/{id}/allocate`: Allocate previously received/paid amounts directly to open `Invoices`.
-- **Finance Operations**:
-  - `/v1/finance/bank-transactions`: CRUD and mapping.
-  - `/v1/finance/reconciliation`: Bank reconciliation logic.
-- **Other Accounting**:
-  - `/v1/accounting/fiscal-periods`: Managing fiscal period lifecycle.
-  - `/v1/accounting/trial-balance`: Generating trial balances.
-- **Reporting**:
-  - Dedicated report endpoints mapped in `controller/report`.
+| Module | Endpoints | Ghi chú |
+|---|---|---|
+| **Partners** | `GET/POST/PUT /v1/partners` | CRUD đối tác |
+| **Bank Accounts** | `GET/POST/PUT /v1/finance/bank-accounts` | CRUD tài khoản ngân hàng |
+| **Accounts (COA)** | `GET/POST/PUT /v1/accounting/accounts` | Chart of Accounts |
+| **Journal Entries** | `GET /v1/accounting/journals` | **Read-only** — Chỉ xem danh sách & chi tiết |
+| **Invoices** | `GET/POST/PUT/DELETE /v1/invoices` | CRUD AP/AR. Draft cho phép xóa |
+| **Invoice Approvals** | `GET/POST /v1/invoice-tasks` | Lấy task chờ duyệt & hành động duyệt/từ chối |
+| **Payments** | `GET/POST/PUT/DELETE /v1/payments` | CRUD thanh toán |
+| | `POST /v1/payments/{id}/post` | Post payment → ghi Sổ cái |
+| | `POST /v1/payments/{id}/allocate` | Phân bổ payment vào Invoice |
+
+> **Đã xóa khỏi codebase**: `/v1/finance/bank-transactions`, `/v1/finance/reconciliation`, `/v1/accounting/fiscal-periods`, `/v1/accounting/trial-balance`, `/v1/reports/*`
+
+---
 
 ## Accounting Rules
-- **Double-Entry**: Every `journal_entry` must generate at least two `journal_lines` where total debits strictly equal total credits (`debit = credit`).
-- **Draft vs Posted**: Transactions (Journals, Invoices, Payments) start as `draft` and strictly require a `post` step (`/post`) to officially impact account balances. 
-- **Currency Calculations**: `BigDecimal` must be used for monetary precision. Exchange rates must be handled if the ledger currency is `VND` but foreign transactions persist.
+- **Double-Entry**: Mọi `journal_entry` được tạo bởi hệ thống phải có ít nhất 2 `journal_lines`, trong đó tổng Nợ (Debit) bằng tổng Có (Credit).
+- **Automated Journals Only**: Bút toán chỉ được sinh tự động qua `CreateJournalEntryWorker` (khi Invoice Approved) và `PaymentService.post()` (khi Payment Posted). **Không cho phép nhập tay**.
+- **Draft vs Posted**: Giao dịch bắt đầu ở `draft`, phải qua bước `/post` để chính thức ghi nhận.
+- **BigDecimal**: Bắt buộc dùng `BigDecimal` cho mọi giá trị tiền tệ.
+
+---
 
 ## Implementation Details
 
 - **Package**: `com.linhdv.efms_core_service`
-- **Identity Links**: `company_id`, `created_by`, `updated_by` are `UUID` strings referencing remote entities in `efms-identity-service`. Core handles isolation through `companyId` filtering manually mapped on the service layer, bypassing database-level FK limits.
-- **Data Mapping**: Use `MapStruct` extensively for `Entity` to `DTO` conversions. Focus on `ApiResponse<T>` output format.
+- **Identity Links**: `company_id`, `created_by`, `updated_by` là `UUID` tham chiếu sang `efms-identity-service`. Không có FK database — isolation thực hiện bằng cách filter `companyId` trên tầng Service.
 - **Security & Authorization**:
-    - Uses `spring-boot-starter-security` for local authorization.
-    - **`GatewayHeaderFilter`**: A custom security filter that intercepts `X-User-*` headers from the API Gateway.
-    - **SecurityContext**: Populates `SecurityContextHolder` with user identity and authorities derived from the `X-User-Permission` header.
-    - **Method Security**: Uses `@PreAuthorize("hasAuthority('RESOURCE:ACTION')")` at the Controller or Service level to enforce fine-grained access control (e.g., `@PreAuthorize("hasAuthority('INVOICE:CREATE')")`).
+  - **`GatewayHeaderFilter`**: Filter tùy chỉnh đọc các header `X-User-*` do API Gateway inject vào.
+  - **`SecurityContextHolder`**: Được populate với identity và authorities từ header `X-User-Permission`.
+  - **Method Security**: `@PreAuthorize("hasAuthority('RESOURCE:ACTION')")` ở Controller/Service.
+
+---
 
 ## Code Structure Rules
-- **`controller`**: Grouped logically: `controller.accounting` for accounts/journals, `controller.finance` for banks, etc. Returns structured `ApiResponse`.
-- **`service`**: Validation logic e.g., checking if `fiscal_period` is `open` before posting. Also responsible for triggering Camunda workflows.
-- **`service/worker`**: Contains Camunda `@JobWorker` classes that execute logic when tasks are assigned by the Zeebe engine.
-- **`repository`**: Database connections requiring `companyId`.
-- **`entity` / `dto` (request, response) / `mapper`**: Similar architecture to Identity Service.
+- **`controller`**: Nhóm theo domain: `controller.accounting`, `controller.finance`, `controller.invoice`. Luôn trả về `ApiResponse<T>`.
+- **`service`**: Business logic, validation, gọi Camunda. **Không** check fiscal period (đã loại bỏ).
+- **`service/worker`**: Chứa các `@JobWorker` class xử lý automated task từ Zeebe engine.
+- **`repository`**: Truy vấn DB, luôn filter theo `companyId`.
+- **`entity` / `dto` / `wrapper`**: Entity map 1-1 với table. DTO tách biệt request/response. Dùng `ApiResponse<T>` và `PagedResponse<T>` làm wrapper chuẩn.
+
+---
 
 ## Guidelines
-1. Do NOT execute a transaction if the `fiscal_period` of the transaction dates lies outside an `open` period.
-2. Changes to any financial data MUST be documented locally in the `audit_logs` table (specific to Core DB).
-3. Validate `@Valid` annotations on `xxxRequest` DTOs.
+1. **KHÔNG** check `fiscal_period` — Validation này đã bị loại bỏ ở phạm vi đồ án.
+2. Validate `@Valid` trên tất cả `xxxRequest` DTO đầu vào.
+3. Mọi thay đổi tài chính nên được ghi vào `audit_logs` nếu có thời gian.
+
+---
+
+## 🎓 Thesis Scope Adaptations — Những thứ đã lược bỏ
+
+Các module sau đã bị **xóa hoàn toàn khỏi codebase** (Controller, Service, Repository, DTO, Entity):
+
+| Module đã xóa | Lý do |
+|---|---|
+| `FiscalPeriod` (Controller, Service, Repo, Entity) | Quá phức tạp, không cần cho demo |
+| `TrialBalance` (Controller, Service, DTO) | Gộp vào Dashboard frontend |
+| `BankTransaction` (Controller, Service, Repo, Entity) | Không cần nhập sao kê ngân hàng |
+| `Reconciliation` (Controller, Service) | Nghiệp vụ quá phức tạp |
+| `Report` (Controller, Service, toàn bộ thư mục) | Gộp vào Dashboard frontend |
+| Manual Journal Entry (POST/PUT/DELETE `/journals`) | Bút toán chỉ được sinh tự động |
+
+**DB Schema KHÔNG thay đổi** — Các bảng tương ứng vẫn tồn tại trong PostgreSQL để đảm bảo tính toàn vẹn và cho phép mở rộng sau này.

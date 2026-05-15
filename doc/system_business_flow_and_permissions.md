@@ -65,7 +65,7 @@ Dựa trên thanh điều hướng (`AppSidebar`), hệ thống hiện đang act
 *   **Luồng nghiệp vụ:** Xem và quản lý Danh mục Tài khoản kế toán (COA) của Công ty. Bao gồm các tài khoản Tài sản, Nợ, Vốn chủ, Doanh thu, Chi phí.
 *   **Quyền hạn cần thiết:** `ACCOUNTS:READ` (và `ACCOUNTS:CREATE` / `UPDATE` nếu có chức năng sửa).
 
-*(Các màn hình Bút toán nhật ký và Bảng cân đối thử đang được chuẩn bị active).*
+*(Lưu ý đối với Đồ án: Màn hình Bút toán nhật ký được giữ ở dạng Chỉ xem (Read-only) để minh chứng khả năng tự động sinh Bút toán kép từ hệ thống. Các Báo cáo kế toán chuyên sâu như Bảng cân đối thử được lược bỏ, thay vào đó sẽ gom số liệu hiển thị trực tiếp lên Dashboard tổng quan).*
 
 ---
 
@@ -78,7 +78,7 @@ Dựa trên thanh điều hướng (`AppSidebar`), hệ thống hiện đang act
     *   Truy cập/Xem: `BANKACC:READ`
     *   Tạo mới/Cập nhật: `BANKACC:CREATE`, `BANKACC:UPDATE`
 
-*(Các màn hình Lịch sử giao dịch và Đối soát đang được định tuyến nhưng chờ hoàn thiện UI).*
+*(Lưu ý đối với Đồ án: Các nghiệp vụ phức tạp như Lịch sử giao dịch, Đối soát ngân hàng và Quản lý Kỳ kế toán (Fiscal Periods) đã được lược bỏ khỏi phạm vi UI nhằm tập trung làm nổi bật luồng nghiệp vụ Phê duyệt Hoá đơn và Thanh toán).*
 
 ---
 

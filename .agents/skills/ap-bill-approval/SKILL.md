@@ -1,42 +1,32 @@
----
-name: ap_bill_approval_management
-description: Hướng dẫn quản lý quy trình phê duyệt AP Bill (Hoá đơn phải trả) tích hợp Camunda 8 trong hệ thống EFMS.
----
+Sau khi loại bỏ Camunda, luồng phê duyệt hóa đơn AP (AP Bill) hiện tại đã được đơn giản hóa thành một State Machine (Máy chuyển trạng thái) lưu trực tiếp trong Database.
 
-# Quản lý Quy trình Phê duyệt AP Bill (Camunda 8)
+Dưới đây là chi tiết luồng nghiệp vụ mới:
 
-Tài liệu này cung cấp hướng dẫn cho Agent để hỗ trợ người dùng (Accountant/Manager) trong việc vận hành quy trình AP Bill.
+1. Sơ đồ trạng thái (State Transitions)
+Hành động	Trạng thái (status)	Trạng thái duyệt (approval_status)	Ý nghĩa
+Tạo mới	draft	null	Hóa đơn nháp, có thể sửa/xóa.
+Xác nhận (Confirm)	open	pending	Chờ Kế toán trưởng phê duyệt.
+Phê duyệt (Approve)	open	approved	Đã duyệt. Hệ thống tự động sinh bút toán Sổ cái.
+Từ chối (Reject)	open	rejected	Bị từ chối. Có thể kèm theo ghi chú (approval_comment).
+Hủy (Cancel)	cancelled	không đổi	Hóa đơn bị hủy bỏ hoàn toàn.
+2. Chi tiết các bước thực hiện qua API
+Bước 1: Xác nhận hóa đơn (Chuyển từ Draft sang Pending)
+Khi User nhấn "Xác nhận" trên giao diện:
 
-## 1. Kiểm tra Trạng thái Hoá đơn
-Trước khi thực hiện bất kỳ hành động nào, hãy kiểm tra trạng thái hiện tại của hoá đơn trong `Invoice` entity:
-- **`status`**: `draft`, `open`, `paid`, ...
-- **`approval_status`**: `pending`, `approved`, `rejected`.
-- **`camunda_process_id`**: Để liên kết với Camunda Operate/Tasklist.
+API: POST /api/core/v1/invoices/{id}/confirm
+Xử lý: Hệ thống cập nhật status = 'open' và approval_status = 'pending'.
+Bước 2: Xem danh sách chờ duyệt
+Kế toán trưởng (hoặc người có quyền) lấy danh sách các hóa đơn đang đợi mình:
 
-## 2. Các Bước Vận hành Chính
+API: GET /api/core/v1/invoice-tasks/tasks?companyId={uuid}
+Xử lý: Backend query trực tiếp trong DB các hóa đơn có invoice_type = 'AP' và approval_status = 'pending'.
+Bước 3: Thực hiện Phê duyệt hoặc Từ chối
+Người duyệt thực hiện hành động kèm theo ghi chú:
 
-### A. Xác nhận Hoá đơn (Confirm)
-Khi Accountant yêu cầu xác nhận hoá đơn (Confirm):
-1. Đảm bảo hoá đơn đang ở trạng thái `draft`.
-2. Gọi `InvoiceService.confirm(id)`.
-3. Kiểm tra xem `ZeebeClient` có khởi tạo process `ap-bill-approval` thành công không.
-4. Trả về thông tin `camunda_process_id` cho người dùng nếu cần.
-
-### B. Phê duyệt Hoá đơn (Approval/Rejection)
-Nếu đóng vai trò hỗ trợ Finance Manager:
-1. API lấy danh sách task sử dụng phương thức `InvoiceService.getAllApprovalTasks(page, size)`, trả về `PagedResponse<InvoiceResponse>` (trong đó mỗi `InvoiceResponse` sẽ đi kèm với `taskId` và `taskName`).
-2. API lấy chi tiết task theo `taskId` sử dụng `InvoiceService.getInvoiceTaskDetail(taskId)` trả về `InvoiceResponse` tương ứng.
-3. Sử dụng **Zeebe REST API v2** (`/v2/user-tasks/{taskId}/completion`) thông qua `tasklistApiClient.completeTask` để complete Zeebe User Task, truyền vào các biến dưới dạng flat JSON:
-   - `approved`: `true` hoặc `false`.
-   - `comment`: Lý do phê duyệt hoặc từ chối.
-3. Nếu Approve: Kiểm tra xem Job Worker `create-journal-entry` có hoàn thành việc tạo bút toán không.
-4. Nếu Reject: Đảm bảo `approval_status` chuyển thành `rejected` và Accountant nhận được thông báo.
-
-## 3. Xử lý Lỗi & Troubleshooting
-- **Lỗi Connection Camunda:** Kiểm tra thông tin xác thực trong `application-dev.yaml` (clientId, clusterId).
-- **Job Worker không chạy:** Đảm bảo các class có annotation `@JobWorker` đang hoạt động và connected tới Zeebe.
-- **Dữ liệu không đồng bộ:** Nếu `approval_status` là `approved` nhưng chưa có `JournalEntry`, hãy kiểm tra log của `CreateJournalEntryWorker`.
-
-## 4. Ràng buộc quan trọng
-- **Ngưỡng 100M:** Khi hỗ trợ thiết kế hoặc debug BPMN, luôn nhớ quy tắc rẽ nhánh dựa trên `totalAmount > 100000000`.
-- **Thanh toán:** Không được hướng dẫn hoặc thực hiện thanh toán nếu `approval_status` != `approved`.
+Phê duyệt: POST /api/core/v1/invoices/{id}/approve?comment=Nội dung duyệt
+approval_status chuyển thành approved.
+Ghi nhận approval_comment.
+Trigger: Hệ thống sẽ gọi Service tạo Bút toán (Journal Entry).
+Từ chối: POST /api/core/v1/invoices/{id}/reject?comment=Lý do từ chối
+approval_status chuyển thành rejected.
+Ghi nhận approval_comment.

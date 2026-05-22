@@ -65,7 +65,7 @@ Claude Desktop tự động tìm thông tin xác thực tại endpoint này (the
 
 ```typescript
 app.get("/.well-known/oauth-authorization-server", (req, res) => {
-  const baseUrl = process.env.EFMS_BASE_URL || "http://localhost:8080";
+  const baseUrl = process.env.PRIVATE_EFMS_BASE_URL || "http://localhost:8080";
   res.json({
     issuer: baseUrl,
     authorization_endpoint: `${baseUrl}/api/identity/oauth/authorize`,
@@ -96,7 +96,7 @@ app.post("/mcp", async (req, res) => {
   try {
     // Gọi Identity Service để verify token và lấy thông tin User
     const identityRes = await axios.get(
-      `${process.env.EFMS_BASE_URL}/api/identity/auth/me`,
+      `${process.env.PRIVATE_EFMS_BASE_URL}/api/identity/auth/me`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -244,7 +244,7 @@ export function registerAllTools(server: McpServer, ctx: McpContext) {
 
 | Biến | stdio | HTTP | Mô tả |
 |---|:---:|:---:|---|
-| `EFMS_BASE_URL` | ✓ | ✓ | Base URL của EFMS API Gateway |
+| `PRIVATE_EFMS_BASE_URL` | ✓ | ✓ | Base URL của EFMS API Gateway |
 | `EFMS_AUTH_URL` | ✓ | ✓ | URL trang login EFMS |
 | `EFMS_CALLBACK_PORT` | ✓ | — | Port localhost để hứng OAuth callback (mặc định 9999) |
 | `JWT_SECRET` | — | ✓ | Shared secret để verify JWT local (nếu không dùng /auth/me) |

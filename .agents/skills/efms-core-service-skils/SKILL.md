@@ -14,7 +14,7 @@ The Core Service handles all major financial accounting operations, double-entry
 ## Core Responsibilities (Active)
 - **Chart of Accounts (COA)**: Quản lý danh mục tài khoản kế toán.
 - **Partners**: Quản lý danh bạ Khách hàng (AR) và Nhà cung cấp (AP).
-- **Invoices (AP Bill / AR Invoice)**: Tạo, trình duyệt qua Camunda, và theo dõi trạng thái hóa đơn.
+- **Invoices (AP Bill / AR Invoice)**: Tạo, phê duyệt qua DB state machine, và theo dõi trạng thái hóa đơn.
 - **Payments**: Ghi nhận thanh toán (Cash In/Out), phân bổ vào hóa đơn, post lên Sổ cái.
 - **Bank Accounts**: Quản lý tài khoản ngân hàng dùng làm nguồn tiền cho Payments.
 - **Journal Entries (Read-only)**: Xem danh sách bút toán kép được hệ thống tự động sinh ra.
@@ -35,14 +35,15 @@ The Core Service handles all major financial accounting operations, double-entry
 
 ---
 
-## Workflow & Automation (Camunda 8)
-- **Engine**: Integrates with Camunda 8 SaaS via `camunda-spring-boot-starter` (8.8.x).
-- **Process Instances**: Khởi động trong `InvoiceService.confirm()` cho AP Bill qua `camundaClient.newCreateInstanceCommand()`.
-- **User Tasks**: Lấy danh sách Task đang chờ duyệt dùng **Tasklist API v1** trong `InvoiceService.getAllApprovalTasks(page, size)`. Backend tự map Task → Invoice và trả `PagedResponse<InvoiceResponse>` kèm `taskId`, `taskName`. Complete task dùng **Zeebe REST API v2** (`/v2/user-tasks/{taskId}/completion`).
-- **Job Workers** (`service/worker/`):
-  - `CreateJournalEntryWorker` (type: `create-journal-entry`): Được trigger khi Invoice được **Duyệt**. Cập nhật `approval_status = approved` và **phải gọi `JournalService.createFromInvoice()`** để sinh bút toán kép tự động — (**⚠️ TODO chưa implement**).
-  - `NotifyRejectionWorker` (type: `notify-rejection`): Cập nhật `approval_status = rejected` khi bị từ chối.
-- **Variables**: Context truyền qua `Map` (e.g., `approved`, `totalAmount`, `invoiceId`). Kết quả worker phải được map lại vào DB (`approval_status`, `camunda_process_id`).
+## Approval Workflow (DB State Machine — Không dùng Camunda)
+- **Không còn Camunda 8**: Quy trình phê duyệt AP Bill được quản lý hoàn toàn bằng trạng thái lưu trong DB.
+- **Luồng trạng thái AP Bill**:
+  - `draft` → `confirm()` → `status=open`, `approval_status=pending`
+  - `open/pending` → `approve(comment?)` → `approval_status=approved` → (TODO: trigger tạo JournalEntry)
+  - `open/pending` → `reject(comment?)` → `approval_status=rejected`
+  - Bất kỳ → `cancel()` → `status=cancelled`
+- **Luồng AR Invoice**: `draft` → `confirm()` → `status=open` (không cần phê duyệt).
+- **Xem danh sách chờ duyệt**: `GET /v1/invoice-tasks/tasks?companyId=...` — filter `type=AP, status=open, approvalStatus=pending` trực tiếp từ DB.
 
 ---
 
@@ -57,7 +58,10 @@ The Core Service handles all major financial accounting operations, double-entry
 | **Accounts (COA)** | `GET/POST/PUT /v1/accounting/accounts` | Chart of Accounts |
 | **Journal Entries** | `GET /v1/accounting/journals` | **Read-only** — Chỉ xem danh sách & chi tiết |
 | **Invoices** | `GET/POST/PUT/DELETE /v1/invoices` | CRUD AP/AR. Draft cho phép xóa |
-| **Invoice Approvals** | `GET/POST /v1/invoice-tasks` | Lấy task chờ duyệt & hành động duyệt/từ chối |
+| **Invoice Approvals** | `GET /v1/invoice-tasks/tasks?companyId=...` | Danh sách AP Bill chờ duyệt (filter DB) |
+| | `GET /v1/invoice-tasks/tasks/{invoiceId}/invoice` | Chi tiết hóa đơn chờ duyệt |
+| | `POST /v1/invoices/{id}/approve?comment=...` | Phê duyệt AP Bill |
+| | `POST /v1/invoices/{id}/reject?comment=...` | Từ chối AP Bill |
 | **Payments** | `GET/POST/PUT/DELETE /v1/payments` | CRUD thanh toán |
 | | `POST /v1/payments/{id}/post` | Post payment → ghi Sổ cái |
 | | `POST /v1/payments/{id}/allocate` | Phân bổ payment vào Invoice |
@@ -87,8 +91,9 @@ The Core Service handles all major financial accounting operations, double-entry
 
 ## Code Structure Rules
 - **`controller`**: Nhóm theo domain: `controller.accounting`, `controller.finance`, `controller.invoice`. Luôn trả về `ApiResponse<T>`.
-- **`service`**: Business logic, validation, gọi Camunda. **Không** check fiscal period (đã loại bỏ).
-- **`service/worker`**: Chứa các `@JobWorker` class xử lý automated task từ Zeebe engine.
+- **`service`**: Business logic, validation. **Không** dùng Camunda, **không** check fiscal period.
+- **`service/accounting`**: Accounting service (Journal).
+- **`service/finance`**: Finance service (Payment, BankAccount).
 - **`repository`**: Truy vấn DB, luôn filter theo `companyId`.
 - **`entity` / `dto` / `wrapper`**: Entity map 1-1 với table. DTO tách biệt request/response. Dùng `ApiResponse<T>` và `PagedResponse<T>` làm wrapper chuẩn.
 

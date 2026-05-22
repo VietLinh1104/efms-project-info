@@ -5,3 +5,4 @@ efms-react/
 efms-common-service/
 efms-mcp-server/
 .DS_Store
+.env

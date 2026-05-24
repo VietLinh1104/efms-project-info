@@ -261,3 +261,10 @@ export function registerAllTools(server: McpServer, ctx: McpContext) {
 | Token lưu ở đâu | `~/.efms-mcp/token.json` | MCP Client giữ |
 | Phân quyền | Dùng chung 1 token | Mỗi user 1 token riêng |
 | Phù hợp | Nội bộ, dev, ít user | Production, nhiều user |
+
+---
+
+## Quy chuẩn Code & Sử dụng Context (MCP Server)
+
+Khi làm việc với code, architecture, hoặc debug module **EFMS MCP Server**, bạn cần sử dụng các công cụ lấy context do hệ thống cung cấp (nếu có MCP server tương ứng) hoặc áp dụng các best practices để tra cứu.
+Luôn ưu tiên đọc kỹ `src/tools/index.ts` và `src/tools/efms.ts` để hiểu các tool đang được cung cấp trước khi sửa đổi hoặc thêm mới.

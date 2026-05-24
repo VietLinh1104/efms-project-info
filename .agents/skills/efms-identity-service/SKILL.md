@@ -73,3 +73,11 @@ The Identity service manages the organizational structure and access control (Au
 1. When modifying `permissions`, ensure they follow the `resource:action` pattern (e.g. `user:create`).
 2. Changes to any business entity MUST be intercepted or logged using the internal `AuditService`.
 3. Multi-tenancy must be strictly applied on Users and Roles using `company_id`.
+
+---
+
+## Quy chuẩn Code & Sử dụng Context (MCP Server)
+
+Khi làm việc với code, architecture, hoặc debug module **EFMS Identity Service**, bạn **phải** sử dụng **MCP Server `codegraph-efms-identity-service`** để lấy context toàn diện và chính xác nhất.
+- Khởi động/kết nối MCP Server `codegraph-efms-identity-service` (lệnh `codegraph serve --mcp` với thư mục `/Users/linhofthenorth/VietLinh/efms-project-info/efms-identity-service`).
+- Luôn ưu tiên dùng các tool do server này cung cấp (như `codegraph_search`, `codegraph_context`, `codegraph_callers`, `codegraph_callees`, `codegraph_impact`) thay vì tìm kiếm (grep) thủ công để tiết kiệm context window và tăng độ chính xác.

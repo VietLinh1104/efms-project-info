@@ -45,3 +45,11 @@ To avoid the N+1 problem and maintain microservice independence:
 - Maintain consistency using: Java 21, Spring Boot 3.3.x, Lombok, MapStruct.
 - **Inter-service Communication**: Use `WebClient` (configured in `WebClientConfig`) for REST calls to other services.
 - Controllers must strictly wrap responses using the generic `ApiResponse<T>` object. Exception handlers must convert any DB isolation or invalid references into appropriate HTTP error codes bundled within the `ApiResponse`.
+
+---
+
+## 5. Quy chuẩn Code & Sử dụng Context (MCP Server)
+
+Khi làm việc với code, architecture, hoặc debug module **EFMS Common Service**, bạn **phải** sử dụng **MCP Server `codegraph-efms-common-service`** để lấy context toàn diện và chính xác nhất.
+- Khởi động/kết nối MCP Server `codegraph-efms-common-service` (lệnh `codegraph serve --mcp` với thư mục `/Users/linhofthenorth/VietLinh/efms-project-info/efms-common-service`).
+- Luôn ưu tiên dùng các tool do server này cung cấp (như `codegraph_search`, `codegraph_context`, `codegraph_callers`, `codegraph_callees`, `codegraph_impact`) thay vì tìm kiếm (grep) thủ công để tiết kiệm context window và tăng độ chính xác.

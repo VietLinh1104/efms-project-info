@@ -1,4 +1,5 @@
 ---
+name: efms-frontend-guidelines
 description: Frontend guidelines and architecture rules for the EFMS React project. Triggers on any frontend tasks like UI components, API integration, or page development.
 ---
 
@@ -310,3 +311,11 @@ Adhere to the following structural conventions when adding or modifying files:
 - [ ] Loading state `<div className="p-8 text-center text-muted-foreground">` cho toàn trang
 - [ ] Zod schema validation + `zodResolver`
 - [ ] Toast notification (`useToastApp`) cho mọi action success/error
+
+---
+
+## 6. Quy chuẩn Code & Sử dụng Context (MCP Server)
+
+Khi làm việc với code, component UI, hoặc debug bug tại frontend **efms-react**, bạn **phải** sử dụng **MCP Server `codegraph-efms-react`** để lấy context toàn diện và chính xác nhất.
+- Khởi động/kết nối MCP Server `codegraph-efms-react` (lệnh `codegraph serve --mcp` với thư mục `/Users/linhofthenorth/VietLinh/efms-project-info/efms-react`).
+- Luôn ưu tiên dùng các tool do server này cung cấp (như `codegraph_search`, `codegraph_context`, `codegraph_callers`, `codegraph_callees`, `codegraph_impact`) thay vì tìm kiếm (grep) thủ công để tiết kiệm context window và tăng độ chính xác.

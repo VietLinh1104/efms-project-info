@@ -47,3 +47,13 @@ This skill provides an overview of the EFMS backend architecture, which consists
 3. Keep Controllers thin by delegating complex business logic to Services.
 4. Ensure proper audit logging for all data manipulations using the internal Audit service.
 5. Provide detailed Swagger/OpenAPI annotations on Controllers.
+
+---
+
+## Sử dụng Context (MCP Servers)
+
+Kiến trúc chia nhỏ thành nhiều microservices. Khi làm việc với service nào, bạn **bắt buộc** phải cấu hình và dùng các **Codegraph MCP Server** tương ứng để đọc source code, tìm kiếm callers/callees thay vì grep thủ công:
+- **efms-api-gateway**: dùng `codegraph-efms-api-gateway`
+- **efms-identity-service**: dùng `codegraph-efms-identity-service`
+- **efms-core-service**: dùng `codegraph-efms-core-service`
+- **efms-common-service**: dùng `codegraph-efms-common-service`

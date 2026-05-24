@@ -120,3 +120,11 @@ Các module sau đã bị **xóa hoàn toàn khỏi codebase** (Controller, Serv
 | Manual Journal Entry (POST/PUT/DELETE `/journals`) | Bút toán chỉ được sinh tự động |
 
 **DB Schema KHÔNG thay đổi** — Các bảng tương ứng vẫn tồn tại trong PostgreSQL để đảm bảo tính toàn vẹn và cho phép mở rộng sau này.
+
+---
+
+## 🎓 Quy chuẩn Code & Sử dụng Context (MCP Server)
+
+Khi làm việc với code, architecture, hoặc debug module **EFMS Core Service**, bạn **phải** sử dụng **MCP Server `codegraph-efms-core-service`** để lấy context toàn diện và chính xác nhất.
+- Khởi động/kết nối MCP Server `codegraph-efms-core-service` (lệnh `codegraph serve --mcp` với thư mục `/Users/linhofthenorth/VietLinh/efms-project-info/efms-core-service`).
+- Luôn ưu tiên dùng các tool do server này cung cấp (như `codegraph_search`, `codegraph_context`, `codegraph_callers`, `codegraph_callees`, `codegraph_impact`) thay vì tìm kiếm (grep) thủ công để tiết kiệm context window và tăng độ chính xác.

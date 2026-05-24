@@ -49,3 +49,10 @@ Database handling document, attachments, and internal communications for any ent
 - **Audit Logging**: Use `JSONB` for `old_data` and `new_data` columns in audit tables.
 - **Precision**: Monetary amounts use `NUMERIC(18,2)`.
 - **Indexing**: Frequent filters like `company_id`, `entry_date`, and `status` should always have an index.
+
+---
+
+## Sử dụng Context (MCP Servers)
+Khi cần tìm kiếm các Entity, Repository hay luồng lưu trữ xuống DB của các dịch vụ, hãy sử dụng **Codegraph MCP Server** của module tương ứng:
+- Ví dụ: cần xem cấu trúc code mapping với `journal_entries`, sử dụng tool của `codegraph-efms-core-service`.
+- Điều này giúp tiết kiệm context window và đạt hiệu năng cao thay vì text-search qua toàn bộ mã nguồn.

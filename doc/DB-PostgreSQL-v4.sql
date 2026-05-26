@@ -211,6 +211,7 @@ CREATE TABLE core.payments (
     id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id       UUID NOT NULL, -- UUID từ Identity Service
     partner_id       UUID REFERENCES core.partners(id),
+    invoice_id       UUID REFERENCES core.invoices(id), -- Hóa đơn được thanh toán
     payment_type     VARCHAR(10) NOT NULL,   -- receive / pay
     payment_date     DATE NOT NULL,
     currency_code    VARCHAR(3) NOT NULL DEFAULT 'VND',
@@ -224,15 +225,6 @@ CREATE TABLE core.payments (
     created_at       TIMESTAMP DEFAULT now()
 );
 
--- 15. Invoice Payments — Liên kết Invoice ↔ Payment
-CREATE TABLE core.invoice_payments (
-    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    invoice_id       UUID NOT NULL REFERENCES core.invoices(id),
-    payment_id       UUID NOT NULL REFERENCES core.payments(id),
-    allocated_amount NUMERIC(18,2) NOT NULL,
-    created_at       TIMESTAMP DEFAULT now(),
-    UNIQUE(invoice_id, payment_id)
-);
 
 -- 17. Bank Transactions — Giao dịch ngân hàng
 CREATE TABLE core.bank_transactions (
@@ -329,6 +321,7 @@ CREATE INDEX idx_invoices_partner                 ON core.invoices(partner_id);
 CREATE INDEX idx_invoices_type_status             ON core.invoices(invoice_type, status);
 CREATE INDEX idx_invoices_due_date                ON core.invoices(due_date);
 CREATE INDEX idx_payments_company                 ON core.payments(company_id);
+CREATE INDEX idx_payments_invoice                 ON core.payments(invoice_id);
 CREATE INDEX idx_bank_transactions_account        ON core.bank_transactions(bank_account_id);
 CREATE INDEX idx_bank_transactions_reconciled     ON core.bank_transactions(is_reconciled);
 CREATE INDEX idx_audit_logs_core_record           ON core.audit_logs(table_name, record_id);

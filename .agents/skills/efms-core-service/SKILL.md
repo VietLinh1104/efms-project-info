@@ -15,7 +15,7 @@ The Core Service handles all major financial accounting operations, double-entry
 - **Chart of Accounts (COA)**: Quản lý danh mục tài khoản kế toán.
 - **Partners**: Quản lý danh bạ Khách hàng (AR) và Nhà cung cấp (AP).
 - **Invoices (AP Bill / AR Invoice)**: Tạo, phê duyệt qua DB state machine, và theo dõi trạng thái hóa đơn.
-- **Payments**: Ghi nhận thanh toán (Cash In/Out), phân bổ vào hóa đơn, post lên Sổ cái.
+- **Payments**: Ghi nhận thanh toán (Cash In/Out) liên kết trực tiếp với hóa đơn, post lên Sổ cái.
 - **Bank Accounts**: Quản lý tài khoản ngân hàng dùng làm nguồn tiền cho Payments.
 - **Journal Entries (Read-only)**: Xem danh sách bút toán kép được hệ thống tự động sinh ra.
 
@@ -28,10 +28,8 @@ The Core Service handles all major financial accounting operations, double-entry
 - `partners`: Customers and vendors.
 - `journal_entries` & `journal_lines`: Double-entry accounting records — **chỉ ghi bởi hệ thống**, không cho phép nhập tay.
 - `invoices` & `invoice_lines`: Receivables (AR) and payables (AP) tracking.
-- `payments` & `invoice_payments`: Bank/cash operations and allocation mapping to invoices.
+- `payments`: Bank/cash operations and single-invoice mapping (via `invoice_id`).
 - `bank_accounts`: Bank accounts used as funding sources for payments.
-- `fiscal_periods` *(schema only)*: Tồn tại trong DB nhưng không có ORM mapping hay UI/API ở phạm vi đồ án.
-- `bank_transactions` *(schema only)*: Tồn tại trong DB nhưng không có ORM mapping hay UI/API ở phạm vi đồ án.
 
 ---
 
@@ -64,7 +62,6 @@ The Core Service handles all major financial accounting operations, double-entry
 | | `POST /v1/invoices/{id}/reject?comment=...` | Từ chối AP Bill |
 | **Payments** | `GET/POST/PUT/DELETE /v1/payments` | CRUD thanh toán |
 | | `POST /v1/payments/{id}/post` | Post payment → ghi Sổ cái |
-| | `POST /v1/payments/{id}/allocate` | Phân bổ payment vào Invoice |
 
 > **Đã xóa khỏi codebase**: `/v1/finance/bank-transactions`, `/v1/finance/reconciliation`, `/v1/accounting/fiscal-periods`, `/v1/accounting/trial-balance`, `/v1/reports/*`
 

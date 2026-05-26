@@ -30,8 +30,7 @@ Database containing accounting and financial data. Note that foreign keys to Ide
 - `journal_lines`: Double-entry transaction lines.
 - `invoices`: Sales (AR) and Purchase (AP) invoices.
 - `invoice_lines`: Itemized billing details.
-- `payments`: Cash or bank payment records.
-- `invoice_payments`: Many-to-many link between invoices and payments.
+- `payments`: Cash or bank payment records with a linked `invoice_id` (single invoice association).
 - `bank_accounts`: Bank and cash GL accounts.
 - `bank_transactions`: Bank statement records.
 - `audit_logs` (Core): Changes to financial data.

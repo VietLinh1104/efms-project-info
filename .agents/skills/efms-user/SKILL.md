@@ -106,14 +106,13 @@ reject_invoice(id, comment="[AI Review] HĐ ... : Đề nghị từ chối. Lý 
 → `list_payments` với `posted: false`.
 
 #### Ghi nhận thanh toán mới
-> *"Ghi nhận thanh toán 5 triệu cho nhà cung cấp ABC từ tài khoản Vietcombank"*
+> *"Ghi nhận thanh toán 5 triệu cho nhà cung cấp ABC từ tài khoản Vietcombank cho hóa đơn [ID]"*
 
 **Quy trình:**
 1. `list_bank_accounts` — tìm `bankAccountId`
 2. `list_partners` — tìm `partnerId`  
-3. `create_payment` với `paymentType: CASH_OUT`
+3. `create_payment` với `paymentType: CASH_OUT` và `invoiceId` (tùy chọn, để liên kết trực tiếp với hóa đơn cần trừ nợ)
 4. `post_payment` → ghi chính thức lên Sổ Cái (tạo bút toán tự động)
-5. `allocate_payment` → phân bổ thanh toán vào hóa đơn tương ứng
 
 > **Lưu ý:** Sau khi `post_payment`, thanh toán **không thể sửa**. Kiểm tra kỹ trước khi post.
 
@@ -179,5 +178,5 @@ User: "OK, phê duyệt hóa đơn đó đi"
 → approve_invoice (kèm comment nếu muốn)
 
 User: "Ghi nhận thanh toán cho hóa đơn này"
-→ list_bank_accounts → create_payment → post_payment → allocate_payment
+→ list_bank_accounts → create_payment (kèm invoiceId) → post_payment
 ```

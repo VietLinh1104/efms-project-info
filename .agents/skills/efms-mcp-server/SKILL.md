@@ -214,7 +214,6 @@ export function registerAllTools(server: McpServer, ctx: McpContext) {
 ### Payments
 - `list_payments`, `get_payment`, `create_payment`
 - `post_payment` — POST /v1/payments/{id}/post
-- `allocate_payment` — POST /v1/payments/{id}/allocate
 
 ### Journals
 - `list_journals`, `get_journal`, `create_journal`, `delete_journal`

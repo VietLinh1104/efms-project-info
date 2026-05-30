@@ -314,6 +314,26 @@ Adhere to the following structural conventions when adding or modifying files:
 
 ---
 
+### 5.8 Quy chuẩn Dialog hiển thị thông tin (Quick View / Detail Dialog)
+
+Mọi dialog có nhiệm vụ hiển thị chi tiết thông tin (chế độ chỉ đọc - read-only) trong EFMS đều phải tuân theo cấu trúc thống nhất sau:
+
+#### 1. Cấu trúc và Layout
+- Tiêu đề Dialog phải đi kèm với icon minh họa thích hợp (ví dụ: `ReceiptText`, `FileText`).
+- Các badge trạng thái (nếu có) phải được hiển thị gọn gàng bên dưới tiêu đề (sử dụng `DialogDescription`).
+- **Tất cả các trường thông tin** phải được bọc trong các thẻ `<Label>` và ô `<Input readOnly />` để mang lại giao diện đồng bộ, sạch sẽ, thay vì sử dụng text thuần hay các row hiển thị tùy ý.
+- Sử dụng grid layout hợp lý (ví dụ: `grid grid-cols-2 gap-4` cho các hàng chứa 2 thông tin) để đảm bảo tính cân đối.
+
+#### 2. Quy chuẩn hiển thị Số tiền (Currency / Amount)
+Để đảm bảo tính nhất quán trong các báo cáo và giao diện tài chính:
+- **Định dạng hiển thị**: Định dạng số phân tách hàng nghìn và nối với tên mã tiền tệ phía sau (ví dụ: `1.000.000 VND`, `5.000 USD`).
+- **Không sử dụng ký tự "đ" hoặc "₫"**: Tuyệt đối không thêm ký hiệu tiền tệ tiếng Việt "đ" hay "₫".
+- **Kiểu dáng và Màu sắc**: 
+  - KHÔNG sử dụng font bold hoặc font-semibold cho giá trị số tiền (sử dụng độ đậm font chữ mặc định).
+  - KHÔNG thêm màu sắc (như xanh lá `text-green-600` hay cam `text-amber-600`) cho số tiền, giữ màu văn bản mặc định của input/văn bản.
+
+---
+
 ## 6. Quy chuẩn Code & Sử dụng Context (MCP Server)
 
 Khi làm việc với code, component UI, hoặc debug bug tại frontend **efms-react**, bạn **phải** sử dụng **MCP Server `codegraph-efms-react`** để lấy context toàn diện và chính xác nhất.

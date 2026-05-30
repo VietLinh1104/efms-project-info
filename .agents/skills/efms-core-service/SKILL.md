@@ -116,7 +116,7 @@ Các module sau đã bị **xóa hoàn toàn khỏi codebase** (Controller, Serv
 | `Report` (Controller, Service, toàn bộ thư mục) | Gộp vào Dashboard frontend |
 | Manual Journal Entry (POST/PUT/DELETE `/journals`) | Bút toán chỉ được sinh tự động |
 
-**DB Schema KHÔNG thay đổi** — Các bảng tương ứng vẫn tồn tại trong PostgreSQL để đảm bảo tính toàn vẹn và cho phép mở rộng sau này.
+**DB Schema đã được cập nhật** — Các bảng `fiscal_periods` và `bank_transactions` đã bị loại bỏ hoàn toàn khỏi thiết kế CSDL (PostgreSQL).
 
 ---
 

@@ -22,7 +22,7 @@ This skill defines the structural and architectural guidelines for the EFMS (Ent
 - **Microservices Structure**:
   The backend is split into two primary services behind an API Gateway:
   - **Identity Service (`/api/identity`)**: Manages multi-tenancy (`companies`), `users`, `roles`, and `permissions`. Handles login and JWT token distribution.
-  - **Core Service (`/api/core`)**: Handles all financial entities like `invoices`, `payments`, `journal_entries`, `accounts`, `partners`, and `fiscal_periods`.
+  - **Core Service (`/api/core`)**: Handles all financial entities like `invoices`, `payments`, `journal_entries`, `accounts`, and `partners`.
   - **Common Service (`/api/common`)**: Handles attachments, comments, and audit logs globally across the system.
   
 - **Authentication & Tenants**:

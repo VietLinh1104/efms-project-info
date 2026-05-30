@@ -205,7 +205,7 @@ export function registerAllTools(server: McpServer, ctx: McpContext) {
 ### Invoices
 - `list_invoices` — filter: status, type, partner, fromDate, toDate
 - `get_invoice` — trả về invoice + invoice_lines
-- `create_invoice` — tạo draft, validate fiscal_period mở
+- `create_invoice` — tạo draft
 - `confirm_invoice` — POST /post → trigger Camunda
 - `delete_invoice` — chỉ khi status = draft
 - `list_approval_tasks` — Gọi `/api/core/v1/invoice-tasks/tasks` trả về danh sách kèm taskId

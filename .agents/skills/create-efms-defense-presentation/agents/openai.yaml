@@ -1,0 +1,4 @@
+interface:
+  display_name: "EFMS Defense Presentation"
+  short_description: "Tạo slide, lời thoại và demo bảo vệ EFMS"
+  default_prompt: "Use $create-efms-defense-presentation to create a complete EFMS defense slide outline, speaker script, and demo script."
